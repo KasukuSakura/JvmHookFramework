@@ -1,5 +1,6 @@
 package io.github.karlatemp.jhf.core.startup;
 
+import io.github.karlatemp.jhf.core.config.JHFConfig;
 import io.github.karlatemp.mxlib.MxLib;
 import io.github.karlatemp.mxlib.logger.*;
 import io.github.karlatemp.mxlib.logger.renders.PrefixSupplierBuilder;
@@ -23,7 +24,10 @@ public class MxLibLogger extends AbstractAppender {
     private static final Map<Level, java.util.logging.Level> mappings = new HashMap<>();
 
     static {
-        MessageFactory bmf = new AnsiMessageFactory();
+        MessageFactory bmf = JHFConfig.INSTANCE.useAnsiMessage
+                ? new AnsiMessageFactory()
+                : new RawMessageFactory();
+
         PrefixedRender.PrefixSupplier result = PrefixSupplierBuilder.parseFrom(
                 new Scanner(Objects.requireNonNull(
                         MxLibLogger.class.getResourceAsStream("/jhf/logger/prefix.txt")
