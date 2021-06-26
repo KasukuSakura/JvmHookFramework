@@ -4,3 +4,6 @@ include(':api')
 include(':core')
 include(':launcher')
 include(':agent')
+
+include(':tester')
+include(':testunit')

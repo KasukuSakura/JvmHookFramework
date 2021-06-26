@@ -1,0 +1,7 @@
+{
+  "minVersion": 0,
+  "package": "tester.mixin",
+  "mixins": ["MixinRunTester"],
+  "client": [],
+  "server": []
+}

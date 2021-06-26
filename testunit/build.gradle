@@ -1,0 +1,35 @@
+plugins {
+    id 'java'
+}
+
+dependencies {
+    implementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+}
+
+tasks.create('startTestUnit', JavaExec.class) { JavaExec exec ->
+    exec.group = 'verifaction'
+    exec.dependsOn(
+            ':agent:reZip',
+            ':tester:jar',
+    )
+    def agentJar = project(':agent').tasks.jar as Jar
+    //noinspection GroovyAssignabilityCheck
+    exec.jvmArgs('-javaagent:' + agentJar.archiveFile.get().asFile.path)
+
+    def workingDir = new File(project.buildDir, 'test-box')
+
+    exec.doFirst {
+        copy {
+            from project(':tester').tasks.jar.outputs
+            into new File(workingDir, '.jvm-hook-framework/plugins')
+        }
+    }
+
+    exec.classpath = project.configurations.runtimeClasspath
+    exec.classpath += sourceSets.main.output
+
+    exec.mainClass.set('testunit.RunTester')
+    exec.workingDir = workingDir
+}
+
+tasks.getByName('check').dependsOn('startTestUnit')

@@ -1,0 +1,12 @@
+plugins {
+    id 'java'
+    id 'java-library'
+}
+
+jar {
+    archiveFileName.set('tester.jar')
+}
+
+dependencies {
+    api project(':api')
+}
