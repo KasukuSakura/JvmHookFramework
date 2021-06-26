@@ -16,14 +16,25 @@ public class JavaLangReflectInvokeEvent {
             SneakyThrow.throw0(exception);
         }
     };
+
+    public enum Type {
+        INVOKE_METHOD,
+        INVOKE_CONSTRUCTOR,
+        GET_FIELD,
+        SET_FIELD
+    }
+
+    public final Type type;
     public final Member target;
     public final Object thiz;
     public final Class<?> caller;
     public final Object[] args; // exists only when invoking Method/Constructor
 
     public JavaLangReflectInvokeEvent(
+            Type type,
             Member target, Object thiz, Class<?> caller, Object[] args
     ) {
+        this.type = type;
         this.target = target;
         this.thiz = thiz;
         this.caller = caller;

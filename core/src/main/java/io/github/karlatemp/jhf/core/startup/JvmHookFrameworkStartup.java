@@ -2,7 +2,7 @@ package io.github.karlatemp.jhf.core.startup;
 
 import io.github.karlatemp.jhf.api.JvmHookFramework;
 import io.github.karlatemp.jhf.api.event.EventPriority;
-import io.github.karlatemp.jhf.api.events.ReflectionInvokeEvent;
+import io.github.karlatemp.jhf.api.events.JavaLangReflectInvokeEvent;
 import io.github.karlatemp.jhf.api.events.TransformBytecodeEvent;
 import io.github.karlatemp.jhf.core.builtin.BuiltInProcessors;
 import io.github.karlatemp.jhf.core.mixin.JHFClassProvider;
@@ -86,9 +86,8 @@ public class JvmHookFrameworkStartup {
             event.bytecode = transformer.transformClassBytes(null, event.name, event.bytecode);
         });
 
-        ReflectionInvokeEvent.EVENT_LINE.register(EventPriority.NORMAL, event -> {
-            System.out.println(event.type + " - " + event.resp);
-            Thread.dumpStack();
+        JavaLangReflectInvokeEvent.EVENT_LINE.register(EventPriority.NORMAL, event -> {
+            System.out.println("On Execute: " + event.type + " - " + event.target + " with caller: " + event.caller);
         });
 
         BuiltInProcessors.setup();

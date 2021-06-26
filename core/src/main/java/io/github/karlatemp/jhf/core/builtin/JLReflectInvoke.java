@@ -2,6 +2,7 @@ package io.github.karlatemp.jhf.core.builtin;
 
 import io.github.karlatemp.jhf.api.events.JavaLangReflectInvokeEvent;
 import io.github.karlatemp.jhf.core.utils.ClassFinder;
+import io.github.karlatemp.jhf.core.utils.RedirectInfos;
 import io.github.karlatemp.unsafeaccessor.Root;
 import io.github.karlatemp.unsafeaccessor.Unsafe;
 import org.objectweb.asm.*;
@@ -13,25 +14,71 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.UUID;
 
 public class JLReflectInvoke implements ClassNodeProcessor {
+    private static Collection<RedirectInfos.RedirectInfo> redirectInfos;
+
     public static class InvokeBridge {
         public static void preInvoke(Method method, Object thiz, Object[] args, Class<?> caller) throws InvocationTargetException, IllegalAccessException {
             JavaLangReflectInvokeEvent.EVENT_LINE.post(new JavaLangReflectInvokeEvent(
+                    JavaLangReflectInvokeEvent.Type.INVOKE_METHOD,
                     method, thiz, caller, args
             ));
         }
 
         public static void preGet(Field field, Object thiz, Class<?> caller) throws IllegalAccessException {
+            JavaLangReflectInvokeEvent.EVENT_LINE.post(new JavaLangReflectInvokeEvent(
+                    JavaLangReflectInvokeEvent.Type.GET_FIELD,
+                    field, thiz, caller, null
+            ));
         }
 
-        public static void preSet(Field field, Object thiz, Class<?> caller) throws IllegalAccessException {
+        public static void preSet(Field field, Object thiz, Object value, Class<?> caller) throws IllegalAccessException {
+            JavaLangReflectInvokeEvent.EVENT_LINE.post(new JavaLangReflectInvokeEvent(
+                    JavaLangReflectInvokeEvent.Type.SET_FIELD,
+                    field, thiz, caller, null
+            ));
+        }
+
+        public static void preSetBoolean(Field field, Object thiz, boolean value, Class<?> caller) throws IllegalAccessException {
+            preSet(field, thiz, caller, null);
+        }
+
+        public static void preSetByte(Field field, Object thiz, byte value, Class<?> caller) throws IllegalAccessException {
+            preSet(field, thiz, caller, null);
+        }
+
+        public static void preSetChar(Field field, Object thiz, char value, Class<?> caller) throws IllegalAccessException {
+            preSet(field, thiz, caller, null);
+        }
+
+        public static void preSetShort(Field field, Object thiz, short value, Class<?> caller) throws IllegalAccessException {
+            preSet(field, thiz, caller, null);
+        }
+
+        public static void preSetInt(Field field, Object thiz, int value, Class<?> caller) throws IllegalAccessException {
+            preSet(field, thiz, caller, null);
+        }
+
+        public static void preSetLong(Field field, Object thiz, long value, Class<?> caller) throws IllegalAccessException {
+            preSet(field, thiz, caller, null);
+        }
+
+        public static void preSetFloat(Field field, Object thiz, float value, Class<?> caller) throws IllegalAccessException {
+            preSet(field, thiz, caller, null);
+        }
+
+        public static void preSetDouble(Field field, Object thiz, double value, Class<?> caller) throws IllegalAccessException {
+            preSet(field, thiz, caller, null);
         }
 
         public static void preAllocate(Constructor<?> constructor, Object[] args, Class<?> caller) throws IllegalAccessException, InvocationTargetException {
             JavaLangReflectInvokeEvent.EVENT_LINE.post(new JavaLangReflectInvokeEvent(
+                    JavaLangReflectInvokeEvent.Type.INVOKE_CONSTRUCTOR,
                     constructor, null, caller, args
             ));
         }
@@ -125,6 +172,7 @@ public class JLReflectInvoke implements ClassNodeProcessor {
     }
 
     public static void init() throws Exception {
+        redirectInfos = new ArrayList<>();
         String frontEndName = "java/lang/JLReflectInvokeRfRf$Z$$$" + UUID.randomUUID();
         bgName = frontEndName;
         String frontEndTypeName = "L" + frontEndName + ";";
@@ -162,6 +210,64 @@ public class JLReflectInvoke implements ClassNodeProcessor {
                 callerSensitive, reflection,
                 "newInstance", Type.getType(Object.class)
         );
+        {
+            // preGet
+            // preSet
+            String[] funcName = {"", "Boolean", "Byte", "Char", "Short", "Int", "Long", "Float", "Double"};
+            Type[] typeName = {
+                    Type.getType(Object.class),
+                    Type.BOOLEAN_TYPE,
+                    Type.BYTE_TYPE,
+                    Type.CHAR_TYPE,
+                    Type.SHORT_TYPE,
+                    Type.INT_TYPE,
+                    Type.LONG_TYPE,
+                    Type.FLOAT_TYPE,
+                    Type.DOUBLE_TYPE,
+            };
+            for (int i = 0; i < funcName.length; i++) {
+                genBridge(frontEndBuilder, backEndBuilder, frontEndName, frontEndTypeName, bridgeName,
+                        "fieldGet" + funcName[i], "preGet",
+                        MethodType.methodType(void.class, Field.class, Object.class)
+                                .toMethodDescriptorString(),
+                        callerSensitive, reflection,
+                        "get" + funcName[i], typeName[i]
+                );
+                genBridge(frontEndBuilder, backEndBuilder, frontEndName, frontEndTypeName, bridgeName,
+                        "fieldSet" + funcName[i], "preSet" + funcName[i],
+                        Type.getMethodDescriptor(
+                                Type.VOID_TYPE,
+                                Type.getType(Field.class),
+                                Type.getType(Object.class),
+                                typeName[i]
+                        ),
+                        callerSensitive, reflection,
+                        "set" + funcName[i], Type.VOID_TYPE
+                );
+
+                redirectInfos.add(new RedirectInfos.RedirectInfo(
+                        bgName,
+                        "fieldGet" + funcName[i],
+                        "(Ljava/lang/reflect/Field;Ljava/lang/Object;)" + typeName[i].getDescriptor(),
+                        "java/lang/reflect/Field",
+                        "get" + funcName[i],
+                        "(Ljava/lang/Object;)" + typeName[i].getDescriptor(),
+                        false
+                ));
+
+
+                redirectInfos.add(new RedirectInfos.RedirectInfo(
+                        bgName,
+                        "fieldSet" + funcName[i],
+                        "(Ljava/lang/reflect/Field;Ljava/lang/Object;" + typeName[i].getDescriptor() + ")V",
+                        "java/lang/reflect/Field",
+                        "set" + funcName[i],
+                        "(Ljava/lang/Object;" + typeName[i].getDescriptor() + ")V",
+                        false
+                ));
+            }
+        }
+
         byte[] frontEndCode = frontEndBuilder.toByteArray();
         byte[] backEndCode = backEndBuilder.toByteArray();
         Unsafe usf = Unsafe.getUnsafe();
@@ -171,13 +277,38 @@ public class JLReflectInvoke implements ClassNodeProcessor {
             Field ins = ft.getDeclaredField("i");
             Root.openAccess(ins).set(null, usf.allocateInstance(bk));
         }
+
+        redirectInfos.add(new RedirectInfos.RedirectInfo(
+                bgName,
+                "invokeMethod",
+                "(Ljava/lang/reflect/Method;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
+                "java/lang/reflect/Method",
+                "invoke",
+                "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
+                false
+        ));
+        redirectInfos.add(new RedirectInfos.RedirectInfo(
+                bgName,
+                "invokeConstructor",
+                "(Ljava/lang/reflect/Constructor;[Ljava/lang/Object;)Ljava/lang/Object;",
+                "java/lang/reflect/Constructor",
+                "invoke",
+                "([Ljava/lang/Object;)Ljava/lang/Object;",
+                false
+        ));
+
+        // for (Object o : redirectInfos) System.out.println(o);
+    }
+
+    JLReflectInvoke() throws Exception {
+        init();
     }
 
     public static void main(String[] args) throws Exception {
         init();
         Class<?> bgc = Class.forName(bgName.replace('/', '.'));
         System.out.println(bgc);
-        for (Method mt : bgc.getDeclaredMethods()) {
+        for (Method mt : bgc.getMethods()) {
             System.out.println(mt);
         }
         Method mt = bgc.getMethod("invokeMethod", Method.class, Object.class, Object[].class);
@@ -187,6 +318,7 @@ public class JLReflectInvoke implements ClassNodeProcessor {
 
     @Override
     public ClassNode transform(ClassNode node) {
-        return null;
+        RedirectInfos.applyRedirect(node, redirectInfos);
+        return node;
     }
 }

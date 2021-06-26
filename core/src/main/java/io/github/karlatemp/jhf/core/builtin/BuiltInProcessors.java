@@ -10,8 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BuiltInProcessors {
-    private static void preinit() {
+    private static void preinit() throws Exception {
         PCChain.processors.add(new ReflectionLimit());
+        PCChain.processors.add(new JLReflectInvoke());
     }
 
     static class PCChain implements ClassNodeProcessor {
@@ -28,7 +29,7 @@ public class BuiltInProcessors {
     }
 
 
-    public static void setup() {
+    public static void setup() throws Exception {
         preinit();
         PCChain chain = new PCChain();
         TransformBytecodeEvent.EVENT_LINE.register(EventPriority.HIGH, event -> {
