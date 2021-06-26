@@ -1,5 +1,9 @@
 package io.github.karlatemp.jhf.core.plugin;
 
+import io.github.karlatemp.jhf.core.utils.Action0;
+import io.github.karlatemp.mxlib.MxLib;
+import io.github.karlatemp.mxlib.logger.MLogger;
+import io.github.karlatemp.mxlib.utils.StringBuilderFormattable;
 import io.github.karlatemp.unsafeaccessor.Root;
 
 import java.io.File;
@@ -12,6 +16,8 @@ import java.util.Enumeration;
 import java.util.Scanner;
 
 public class PluginClassLoader extends URLClassLoader {
+    private static final MLogger LOGGER = MxLib.getLoggerFactory().getLogger("JHF.plugin");
+
     public PluginClassLoader(ClassLoader parent) {
         super(new URL[0], parent);
     }
@@ -27,7 +33,8 @@ public class PluginClassLoader extends URLClassLoader {
             File[] files = directory.listFiles();
             if (files != null) {
                 for (File f : files) {
-                    if (f.isFile() && f.getName().equals(".jar")) {
+                    if (f.isFile() && f.getName().endsWith(".jar")) {
+                        LOGGER.verbose(StringBuilderFormattable.by("Loading from ").plusMsg(f));
                         try {
                             pcl.addURL(f.toURI().toURL());
                         } catch (MalformedURLException e) {
@@ -45,12 +52,16 @@ public class PluginClassLoader extends URLClassLoader {
         return pcl;
     }
 
-    public static PluginClassLoader loadAndBootstrap(File directory) throws Throwable {
+    public static void loadAndBootstrap(File directory, Action0<PluginClassLoader, Void> callback) throws Throwable {
+        LOGGER.verbose(StringBuilderFormattable.by("Loading plugins from ").plusMsg(directory.getAbsolutePath()));
         directory.mkdirs();
         PluginClassLoader pcl = PCL(directory);
+        callback.run(pcl);
         Enumeration<URL> mains = pcl.getResources("jhf-main.txt");
         while (mains.hasMoreElements()) {
-            try (Scanner scanner = new Scanner(mains.nextElement().openStream())) {
+            URL url = mains.nextElement();
+            LOGGER.verbose(StringBuilderFormattable.by("Reading classes from ").plusMsg(url));
+            try (Scanner scanner = new Scanner(url.openStream())) {
                 while (scanner.hasNextLine()) {
                     String nextLine = scanner.nextLine();
                     if (nextLine.isEmpty()) continue;
@@ -62,6 +73,5 @@ public class PluginClassLoader extends URLClassLoader {
                 }
             }
         }
-        return pcl;
     }
 }

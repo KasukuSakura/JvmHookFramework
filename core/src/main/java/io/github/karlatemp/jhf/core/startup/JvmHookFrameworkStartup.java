@@ -2,7 +2,6 @@ package io.github.karlatemp.jhf.core.startup;
 
 import io.github.karlatemp.jhf.api.JvmHookFramework;
 import io.github.karlatemp.jhf.api.event.EventPriority;
-import io.github.karlatemp.jhf.api.events.JavaLangReflectInvokeEvent;
 import io.github.karlatemp.jhf.api.events.TransformBytecodeEvent;
 import io.github.karlatemp.jhf.core.builtin.BuiltInProcessors;
 import io.github.karlatemp.jhf.core.mixin.JHFClassProvider;
@@ -69,11 +68,16 @@ public class JvmHookFrameworkStartup {
     public static void bootstrap(Instrumentation instrumentation) throws Throwable {
         File workingDir = new File(".jvm-hook-framework");
         run();
-        VMTransfer.PLCL = PluginClassLoader.loadAndBootstrap(new File(workingDir, "plugins"));
-        Field ccl = JHFClassProvider.class.getDeclaredField("CCL");
-        ccl.setAccessible(true);
-        ccl.set(null, VMTransfer.PLCL);
-
+        PluginClassLoader.loadAndBootstrap(
+                new File(workingDir, "plugins"),
+                it -> {
+                    VMTransfer.PLCL = it;
+                    Field ccl = JHFClassProvider.class.getDeclaredField("CCL");
+                    ccl.setAccessible(true);
+                    ccl.set(null, VMTransfer.PLCL);
+                    return null;
+                }
+        );
         {
             Field field = JvmHookFramework.class.getDeclaredField("INSTANCE");
             Root.openAccess(field);
@@ -83,12 +87,9 @@ public class JvmHookFrameworkStartup {
 
         IMixinTransformer transformer = (IMixinTransformer) MixinEnvironment.getCurrentEnvironment().getActiveTransformer();
         TransformBytecodeEvent.EVENT_LINE.register(EventPriority.NORMAL, event -> {
-            event.bytecode = transformer.transformClassBytes(null, event.name, event.bytecode);
+            event.bytecode = transformer.transformClassBytes(null, event.name.replace('/', '.'), event.bytecode);
         });
 
-        JavaLangReflectInvokeEvent.EVENT_LINE.register(EventPriority.NORMAL, event -> {
-            System.out.println("On Execute: " + event.type + " - " + event.target + " with caller: " + event.caller);
-        });
 
         BuiltInProcessors.setup();
 

@@ -62,7 +62,7 @@ public class JHFMixinService extends MixinServiceAbstract {
 
     @Override
     public InputStream getResourceAsStream(String name) {
-        return JHFMixinService.class.getResourceAsStream("/" + name);
+        return JHFClassProvider.CCL.getResourceAsStream(name);
     }
 
     @Override
