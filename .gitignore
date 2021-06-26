@@ -1,0 +1,9 @@
+/.jvm-hook-framework
+/.mixin.out
+/.idea
+/.gradle
+build/
+*.log
+
+/gradlew.bat
+

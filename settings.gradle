@@ -1,0 +1,6 @@
+rootProject.name = 'jvm-hook-framework'
+
+include(':api')
+include(':core')
+include(':launcher')
+include(':agent')

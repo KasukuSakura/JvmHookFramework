@@ -1,0 +1,26 @@
+plugins {
+    id 'java'
+}
+
+tasks.create("writeBinary", JavaExec.class) { JavaExec exec ->
+    dependsOn(':api:jar')
+    dependsOn(':core:jar')
+
+    exec.classpath += project.configurations.testRuntimeClasspath
+    exec.classpath += project.configurations.runtimeClasspath
+    exec.classpath += sourceSets.getByName('test').output
+    exec.classpath += sourceSets.getByName('main').output
+
+    exec.mainClass.set("rszip.ZipBinary")
+
+    def conf = project(':core').configurations.runtimeClasspath
+    def args = new ArrayList<String>()
+    for (def file : conf.files) {
+        args.add(file.absolutePath)
+    }
+    for (def file : project(':core').tasks.jar.outputs.files) {
+        args.add(file.absolutePath)
+    }
+
+    exec.args(args)
+}

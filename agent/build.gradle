@@ -1,0 +1,20 @@
+plugins {
+    id 'java'
+}
+
+jar {
+    //noinspection GroovyAssignabilityCheck
+    manifest {
+        attributes([
+                'Premain-Class'          : 'io.github.karlatemp.jhf.agent.JHFAgent',
+                'Can-Redefine-Classes'   : 'true',
+                'Can-Retransform-Classes': 'true',
+        ])
+    }
+    mustRunAfter(':launcher:writeBinary')
+}
+
+tasks.create('reZip') {
+    dependsOn(':launcher:writeBinary')
+    dependsOn(':agent:jar')
+}

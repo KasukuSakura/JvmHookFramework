@@ -1,0 +1,109 @@
+plugins {
+    id 'java'
+    id 'java-library'
+}
+
+allprojects {
+    group 'io.github.karlatemp.jhf'
+    version '1.0.0'
+}
+
+subprojects {
+    pluginManager.withPlugin('java') {
+        sourceSets.create('j9') { SourceSet nset ->
+            def main = sourceSets.main
+            nset.compileClasspath += main.compileClasspath
+            nset.compileClasspath += main.output
+            nset.runtimeClasspath += main.runtimeClasspath
+            nset.runtimeClasspath += main.output
+
+            def test = sourceSets.test
+            test.compileClasspath += nset.output
+            test.runtimeClasspath += nset.output
+        }
+
+        jar {
+            from(sourceSets.j9.output.files)
+        }
+
+        repositories {
+            mavenCentral()
+            maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+            maven { url = 'https://files.minecraftforge.net/maven/' }
+        }
+
+        dependencies {
+            testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+            testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+        }
+
+        test {
+            useJUnitPlatform()
+        }
+
+        compileJava {
+            sourceCompatibility = JavaVersion.VERSION_1_8
+            targetCompatibility = JavaVersion.VERSION_1_8
+        }
+
+        compileJ9Java {
+            sourceCompatibility = JavaVersion.VERSION_1_9
+            targetCompatibility = JavaVersion.VERSION_1_9
+        }
+
+        compileTestJava {
+            sourceCompatibility = JavaVersion.VERSION_11
+            targetCompatibility = JavaVersion.VERSION_11
+        }
+
+    }
+}
+
+({
+    def versionOverrides = [
+            '=====================================': '',
+            'org.jetbrains:annotations'            : '21.0.0',
+            'org.ow2.asm'                          : '9.1',
+    ]
+    allprojects {
+        afterEvaluate {
+            configurations.all { Configuration configuration ->
+                def lst = configuration.dependencies.matching { Dependency dependency ->
+                    if (dependency.version != null) return false
+                    return true
+                }.toList()
+                lst.forEach { dep ->
+                    def result1 = versionOverrides[dep.toString()]
+                    if (result1 == null) {
+                        result1 = versionOverrides[dep.group]
+                    }
+                    if (result1 != null) {
+                        configuration.dependencies.remove(dep)
+                        configuration.dependencies.add(
+                                project.dependencies.create(
+                                        group: dep.group,
+                                        name: dep.name,
+                                        version: result1,
+                                )
+                        )
+                    }
+                }
+            }
+        }
+        configurations.all { Configuration configuration ->
+            configuration.resolutionStrategy.eachDependency { dependency ->
+                def result1 = versionOverrides[dependency.requested.module.toString()]
+                if (result1 != null) {
+                    dependency.useVersion(result1)
+                    dependency.because("Custom override rule")
+                } else {
+                    def result2 = versionOverrides[dependency.requested.group]
+                    if (result2 != null) {
+                        dependency.useVersion(result2)
+                        dependency.because("Custom override rule")
+                    }
+                }
+            }
+        }
+    }
+})();
