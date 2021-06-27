@@ -4,6 +4,7 @@ import io.github.karlatemp.jhf.api.JvmHookFramework;
 import io.github.karlatemp.jhf.api.event.EventPriority;
 import io.github.karlatemp.jhf.api.events.TransformBytecodeEvent;
 import io.github.karlatemp.jhf.core.builtin.BuiltInProcessors;
+import io.github.karlatemp.jhf.core.config.JHFConfig;
 import io.github.karlatemp.jhf.core.mixin.JHFClassProvider;
 import io.github.karlatemp.jhf.core.plugin.PluginClassLoader;
 import io.github.karlatemp.unsafeaccessor.Root;
@@ -45,7 +46,6 @@ public class JvmHookFrameworkStartup {
     static class VMTransfer implements ClassFileTransformer {
         static final ClassLoader VMH = VMTransfer.class.getClassLoader();
         static ClassLoader PLCL;
-        static IMixinTransformer transformer;
 
         @Override
         public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
@@ -66,10 +66,11 @@ public class JvmHookFrameworkStartup {
     }
 
     public static void bootstrap(Instrumentation instrumentation) throws Throwable {
-        File workingDir = new File(".jvm-hook-framework");
+        JHFConfig.reload();
+
         run();
         PluginClassLoader.loadAndBootstrap(
-                new File(workingDir, "plugins"),
+                new File(JHFConfig.workingDir, "plugins"),
                 it -> {
                     VMTransfer.PLCL = it;
                     Field ccl = JHFClassProvider.class.getDeclaredField("CCL");
