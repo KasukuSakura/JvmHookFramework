@@ -1,6 +1,8 @@
 plugins {
     id 'java'
     id 'java-library'
+    id 'maven-publish'
+    id 'io.github.karlatemp.publication-sign'
 }
 
 dependencies {
@@ -20,4 +22,87 @@ dependencies {
     api 'io.github.karlatemp.mxlib:mxlib-logger:3.0-dev-19'
     api 'io.github.karlatemp:unsafe-accessor:1.6.0'
 
+}
+
+
+def proj = project
+
+proj.tasks.create("sourcesJar", Jar.class) { tsk ->
+    tsk.dependsOn("classes")
+    tsk.archiveClassifier.set('sources')
+    tsk.from proj.sourceSets.main.allSource
+}
+
+proj.tasks.create("javadocJar", Jar.class) { tsk ->
+    tsk.archiveClassifier.set('javadoc')
+}
+
+publishing {
+    repositories {
+        maven {
+            setName("MavenCentral")
+            // Maven Central
+            setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2")
+
+            credentials {
+                def prop = { name ->
+                    if (rootProject.hasProperty(name)) {
+                        return rootProject.property(name)
+                    }
+                    return ""
+                }
+                username = prop('sonatype.user')
+                password = prop('sonatype.key')
+            }
+
+            metadataSources.ignoreGradleMetadataRedirection()
+        }
+
+        mavenLocal {
+            metadataSources.ignoreGradleMetadataRedirection()
+        }
+
+    }
+
+    publications { container ->
+
+        register("main", MavenPublication.class) { publication ->
+            publication.artifactId(proj.name)
+            //noinspection GroovyAssignabilityCheck
+            publication.from(proj.components.java)
+
+            def sources = proj.tasks.findByName('sourcesJar')
+            def javadoc = proj.tasks.findByName('javadocJar')
+            if (sources instanceof Jar) {
+                publication.artifact sources
+            }
+            if (javadoc instanceof Jar) {
+                publication.artifact javadoc
+            }
+            publication.setModuleDescriptorGenerator(null)
+
+            publication.pom {
+                name = 'JVM Hook Framework'
+                description = 'JVM Hook Framework'
+                url = 'https://github.com/KasukuSakura/JvmHookFramework'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://spdx.org/licenses/MIT.html'
+                    }
+                }
+                developers {
+                    developer {
+                        name = 'Karlatemp'
+                        email = 'karlatemp@vip.qq.com'
+                    }
+                }
+                scm {
+                    url = 'https://github.com/KasukuSakura/JvmHookFramework.git'
+                    connection = 'https://github.com/KasukuSakura/JvmHookFramework.git'
+                }
+            }
+        }
+
+    }
 }

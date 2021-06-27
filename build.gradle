@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'java-library'
+    id 'io.github.karlatemp.publication-sign' version '1.2.2'
 }
 
 allprojects {
@@ -115,3 +116,11 @@ subprojects {
         buildScan.termsOfServiceAgree = "yes"
     }
 })();
+
+
+publicationSign {
+    setupWorkflow { workflow ->
+        workflow.fastSetup("keys/key.pub", "keys/key.pri")
+    }
+}
+
