@@ -7,6 +7,7 @@ import org.spongepowered.configurate.hocon.HoconConfigurationLoader;
 import org.spongepowered.configurate.serialize.TypeSerializerCollection;
 
 import java.io.File;
+import java.lang.instrument.Instrumentation;
 import java.nio.file.Path;
 
 public abstract class JvmHookFramework {
@@ -34,4 +35,6 @@ public abstract class JvmHookFramework {
     public abstract HoconConfigurationLoader newConfigLoader(ConfigurationOptions options, Path path);
 
     public abstract TypeSerializerCollection jhfExtractTypeSerializers();
+
+    public abstract Instrumentation getInstrumentation();
 }

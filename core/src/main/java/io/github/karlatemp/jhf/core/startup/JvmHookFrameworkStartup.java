@@ -23,6 +23,8 @@ import java.lang.reflect.Field;
 import java.security.ProtectionDomain;
 
 public class JvmHookFrameworkStartup {
+    static Instrumentation instrumentation;
+
     public static void main(String[] args) {
         run();
     }
@@ -93,6 +95,7 @@ public class JvmHookFrameworkStartup {
 
 
         BuiltInProcessors.setup();
+        JvmHookFrameworkStartup.instrumentation = instrumentation;
 
         if (instrumentation != null) {
             instrumentation.addTransformer(new VMTransfer(), true);

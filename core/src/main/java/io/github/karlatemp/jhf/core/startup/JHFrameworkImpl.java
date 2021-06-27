@@ -13,6 +13,7 @@ import org.spongepowered.configurate.hocon.HoconConfigurationLoader;
 import org.spongepowered.configurate.serialize.TypeSerializerCollection;
 
 import java.io.File;
+import java.lang.instrument.Instrumentation;
 import java.nio.file.Path;
 
 class JHFrameworkImpl extends JvmHookFramework {
@@ -50,5 +51,10 @@ class JHFrameworkImpl extends JvmHookFramework {
     @Override
     public TypeSerializerCollection jhfExtractTypeSerializers() {
         return JHFConfig.EXTRACT_SERIALIZERS;
+    }
+
+    @Override
+    public Instrumentation getInstrumentation() {
+        return JvmHookFrameworkStartup.instrumentation;
     }
 }
