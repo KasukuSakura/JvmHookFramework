@@ -18,3 +18,18 @@ tasks.create('reZip') {
     dependsOn(':launcher:writeBinary')
     dependsOn(':agent:jar')
 }
+
+tasks.create('ci-build') {
+    dependsOn(':agent:reZip')
+
+    doFirst {
+        copy {
+            from tasks.getByName('jar').outputs
+            into new File(project.buildDir, "ci/agent.jar")
+        }
+        copy {
+            from project(':api').tasks.getByName('jar').outputs
+            into new File(project.buildDir, "ci/api.jar")
+        }
+    }
+}

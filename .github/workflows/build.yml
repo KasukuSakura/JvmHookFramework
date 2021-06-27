@@ -1,6 +1,11 @@
 name: Build
 
-on: [ push, pull_request ]
+on:
+  push: {}
+  pull_request: {}
+  release:
+    types:
+      - created
 
 jobs:
   build:
@@ -21,3 +26,32 @@ jobs:
 
       - name: Build project
         run: ./gradlew build --scan
+
+      - name: Archive Jar artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: Agent
+          path: agent/build/ci
+
+      - name: Upload artifact (javaagent)
+        if: "${{ github.event_name == 'release' }}"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./agent/build/ci/agent.jar
+          asset_name: jvm-hook-framework-javaagent-${{ github.event.release.tag_name }}.jar
+          asset_content_type: application/jar
+
+      - name: Upload artifact (api)
+        if: "${{ github.event_name == 'release' }}"
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./agent/build/ci/api.jar
+          asset_name: jvm-hook-framework-api-${{ github.event.release.tag_name }}.jar
+          asset_content_type: application/jar
+
