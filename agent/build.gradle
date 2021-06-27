@@ -25,6 +25,7 @@ tasks.create('ci-build') {
     dependsOn(':agent:reZip')
 
     doFirst {
+        new File(project.buildDir, "ci").mkdirs()
         Files.copy(
                 tasks.getByName('jar').outputs.files.iterator().next().toPath(),
                 new File(project.buildDir, "ci/agent.jar").toPath()
