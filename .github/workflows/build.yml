@@ -25,7 +25,7 @@ jobs:
         run: chmod -R 777 *
 
       - name: Build project
-        run: ./gradlew build --scan
+        run: ./gradlew build :agent:ci-build --scan
 
       - name: Archive Jar artifacts
         uses: actions/upload-artifact@v2

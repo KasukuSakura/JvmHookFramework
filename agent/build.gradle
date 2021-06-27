@@ -1,3 +1,5 @@
+import java.nio.file.Files
+
 plugins {
     id 'java'
 }
@@ -23,13 +25,14 @@ tasks.create('ci-build') {
     dependsOn(':agent:reZip')
 
     doFirst {
-        copy {
-            from tasks.getByName('jar').outputs
-            into new File(project.buildDir, "ci/agent.jar")
-        }
-        copy {
-            from project(':api').tasks.getByName('jar').outputs
-            into new File(project.buildDir, "ci/api.jar")
-        }
+        Files.copy(
+                tasks.getByName('jar').outputs.files.iterator().next().toPath(),
+                new File(project.buildDir, "ci/agent.jar").toPath()
+        )
+
+        Files.copy(
+                project(':api').tasks.getByName('jar').outputs.files.iterator().next().toPath(),
+                new File(project.buildDir, "ci/api.jar").toPath()
+        )
     }
 }
