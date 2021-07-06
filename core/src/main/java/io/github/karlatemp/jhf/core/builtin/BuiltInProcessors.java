@@ -2,6 +2,8 @@ package io.github.karlatemp.jhf.core.builtin;
 
 import io.github.karlatemp.jhf.api.event.EventPriority;
 import io.github.karlatemp.jhf.api.events.TransformBytecodeEvent;
+import io.github.karlatemp.jhf.core.redirect.RedirectGenerator;
+import io.github.karlatemp.jhf.core.redirects.ReflectHook;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
@@ -11,8 +13,9 @@ import java.util.List;
 
 public class BuiltInProcessors {
     private static void preinit() throws Exception {
-        PCChain.processors.add(new ReflectionLimit());
-        PCChain.processors.add(new JLReflectInvoke());
+        PCChain.processors.add(new RedirectedClassNodeProcessor(RedirectGenerator.redirectInfos));
+
+        RedirectGenerator.generate(ReflectHook.class);
     }
 
     static class PCChain implements ClassNodeProcessor {
