@@ -55,7 +55,7 @@ public class RedirectInfos {
         }
     }
 
-    private static RedirectInfo findRedirectInfo(Collection<RedirectInfo> rd, String own, String name, String desc, boolean isStatic) {
+    public static RedirectInfo findRedirectInfo(Collection<RedirectInfo> rd, String own, String name, String desc, boolean isStatic) {
         for (RedirectInfo redirectInfo : rd) {
             if (redirectInfo.isStatic ^ isStatic) continue;
             if (!redirectInfo.sourceOwner.equals(own)) continue;
