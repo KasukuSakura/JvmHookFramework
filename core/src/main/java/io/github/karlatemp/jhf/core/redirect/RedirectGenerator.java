@@ -316,6 +316,14 @@ public class RedirectGenerator {
 
         if (current.isEmpty()) return;
         redirectInfos.addAll(current);
+        for (io.github.karlatemp.jhf.core.utils.RedirectInfos.RedirectInfo red : current) {
+            StackReMapInfo.register(
+                    red.owner.replace('/', '.'),
+                    red.methodName,
+                    red.sourceOwner.replace('/', '.'),
+                    red.sourceMethodName
+            );
+        }
         {
             byte[] b = frontEndWriter.toByteArray(), bkx = backEndWriter.toByteArray();
             Unsafe unsafe = UAAccessHolder.UNSAFE;

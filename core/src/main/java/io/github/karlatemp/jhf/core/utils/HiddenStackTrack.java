@@ -1,6 +1,7 @@
 package io.github.karlatemp.jhf.core.utils;
 
 import io.github.karlatemp.jhf.core.config.JHFConfig;
+import io.github.karlatemp.jhf.core.redirect.StackReMapInfo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,15 +37,32 @@ public class HiddenStackTrack {
 
     private static void hiddenUp(Throwable throwable) {
         if (throwable == null) return;
-        if (JHFConfig.INSTANCE.hiddenAll) {
-            hidden1(throwable);
-        } else {
-            hidden0(throwable);
+        StackTraceElement[] stackTrace = throwable.getStackTrace();
+        StackTraceElement[] remapped = hiddenUp(stackTrace);
+        if (remapped != stackTrace) {
+            throwable.setStackTrace(remapped);
         }
     }
 
-    private static void hidden0(Throwable throwable) {
-        StackTraceElement[] stackTrace = throwable.getStackTrace();
+    public static StackTraceElement[] hiddenUp(StackTraceElement[] stackTrace) {
+        if (stackTrace == null) return null;
+        if (!JHFConfig.INSTANCE.hiddenStackTrack) return stackTrace;
+
+        if (JHFConfig.INSTANCE.hiddenAll) {
+            return hiddenStack1(stackTrace);
+        } else {
+            return hiddenStack0(stackTrace);
+        }
+    }
+
+    private static void remap(StackTraceElement[] stackTrace) {
+        for (StackTraceElement eln : stackTrace) {
+            StackReMapInfo.remap(eln);
+        }
+    }
+
+    public static StackTraceElement[] hiddenStack0(StackTraceElement[] stackTrace) {
+        remap(stackTrace);
         int ed = stackTrace.length;
         for (int i = ed - 1; i >= 0; i--) {
             if (doHidden(stackTrace[i])) {
@@ -57,20 +75,21 @@ public class HiddenStackTrack {
                         stackTraceElements.add(0, stackTrace[z]);
                     }
                 }
-                throwable.setStackTrace(stackTraceElements.toArray(new StackTraceElement[0]));
-                return;
+                return stackTraceElements.toArray(new StackTraceElement[0]);
             }
         }
+        return stackTrace;
     }
 
-    private static void hidden1(Throwable throwable) {
-        StackTraceElement[] stackTrace = throwable.getStackTrace();
+    public static StackTraceElement[] hiddenStack1(StackTraceElement[] stackTrace) {
+        remap(stackTrace);
         int ed = stackTrace.length;
         for (int i = ed - 1; i >= 0; i--) {
             if (doHidden(stackTrace[i])) {
-                throwable.setStackTrace(Arrays.copyOfRange(stackTrace, i + 1, ed));
-                return;
+                return Arrays.copyOfRange(stackTrace, i + 1, ed);
             }
         }
+        return stackTrace;
     }
+
 }

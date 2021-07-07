@@ -9,9 +9,12 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import java.io.File;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class DmpC {
+    public static final Collection<Class<?>> GENERATED_CLASSES = new ConcurrentLinkedDeque<>();
     public static final File dmpStore = new File(
             JHFConfig.workingDir, "classes-dump/" + UUID.randomUUID()
     );
@@ -41,11 +44,15 @@ public class DmpC {
 
     public static Class<?> define(ClassLoader cl, byte[] c) {
         dumpToLocal(c);
-        return UAAccessHolder.UNSAFE.defineClass(null, c, 0, c.length, cl, null);
+        Class<?> resp = UAAccessHolder.UNSAFE.defineClass(null, c, 0, c.length, cl, null);
+        GENERATED_CLASSES.add(resp);
+        return resp;
     }
 
     public static Class<?> defineAnonymous(Class<?> host, byte[] c) {
         dumpToLocal(c);
-        return UAAccessHolder.UNSAFE.defineAnonymousClass(host, c, null);
+        Class<?> resp = UAAccessHolder.UNSAFE.defineAnonymousClass(host, c, null);
+        GENERATED_CLASSES.add(resp);
+        return resp;
     }
 }
