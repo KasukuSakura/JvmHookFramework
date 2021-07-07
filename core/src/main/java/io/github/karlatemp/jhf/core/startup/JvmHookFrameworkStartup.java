@@ -7,6 +7,7 @@ import io.github.karlatemp.jhf.core.builtin.BuiltInProcessors;
 import io.github.karlatemp.jhf.core.config.JHFConfig;
 import io.github.karlatemp.jhf.core.mixin.JHFClassProvider;
 import io.github.karlatemp.jhf.core.plugin.PluginClassLoader;
+import io.github.karlatemp.jhf.core.redirect.StackReMapInfo;
 import io.github.karlatemp.unsafeaccessor.Root;
 import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.util.PropertiesUtil;
@@ -98,6 +99,7 @@ public class JvmHookFrameworkStartup {
         JvmHookFrameworkStartup.instrumentation = instrumentation;
 
         if (instrumentation != null) {
+            StackReMapInfo.refineReflectionFactory(instrumentation);
             instrumentation.addTransformer(new VMTransfer(), true);
         }
     }

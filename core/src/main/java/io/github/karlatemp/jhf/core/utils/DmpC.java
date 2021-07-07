@@ -3,6 +3,8 @@ package io.github.karlatemp.jhf.core.utils;
 import io.github.karlatemp.jhf.core.config.JHFConfig;
 import io.github.karlatemp.mxlib.MxLib;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -54,5 +56,11 @@ public class DmpC {
         Class<?> resp = UAAccessHolder.UNSAFE.defineAnonymousClass(host, c, null);
         GENERATED_CLASSES.add(resp);
         return resp;
+    }
+
+    public static byte[] toByteCode(ClassNode node) {
+        ClassWriter cw = new ClassWriter(0);
+        node.accept(cw);
+        return cw.toByteArray();
     }
 }

@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import static io.github.karlatemp.jhf.api.utils.RandomNameGenerator.GENERATOR;
+import static io.github.karlatemp.jhf.api.utils.RandomNameGenerator.INSTANCE;
 
 @SuppressWarnings("ConstantConditions")
 public class MethodInvokeStackJLAMirror {
@@ -61,6 +62,8 @@ public class MethodInvokeStackJLAMirror {
     public static final String[] EMIT_METHOD_DESC,
             POLL_METHOD_NAME,
             POLL_METHOD_DESC;
+
+    public static final String REMAP_METHOD_M_NAME, REMAP_METHOD_M_DESC = "(Ljava/lang/reflect/Method;)Ljava/lang/reflect/Method;";
 
     static {
         try {
@@ -134,6 +137,21 @@ public class MethodInvokeStackJLAMirror {
                     hs.visitMethodInsn(Opcodes.INVOKESTATIC, "io/github/karlatemp/jhf/core/utils/HiddenStackTrack", "hidden", "(Ljava/lang/Throwable;)V", false);
                     hs.visitInsn(Opcodes.RETURN);
                     hs.visitMaxs(2, 2);
+                }
+                { // method-remap
+                    jlaft.visitMethod(Opcodes.ACC_PROTECTED | Opcodes.ACC_ABSTRACT, "remap", REMAP_METHOD_M_DESC, null,null);
+                    MethodVisitor remap = jlaft.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, REMAP_METHOD_M_NAME = "m-remap", REMAP_METHOD_M_DESC, null, null);
+                    remap.visitFieldInsn(Opcodes.GETSTATIC, MIRROR_ALOC_NAME, "i", MANT);
+                    remap.visitVarInsn(Opcodes.ALOAD, 0);
+                    remap.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MIRROR_ALOC_NAME, "remap", REMAP_METHOD_M_DESC, false);
+                    remap.visitInsn(Opcodes.ARETURN);
+                    remap.visitMaxs(3, 1);
+
+                    remap = spi.visitMethod(Opcodes.ACC_PROTECTED, "remap", REMAP_METHOD_M_DESC, null,null);
+                    remap.visitVarInsn(Opcodes.ALOAD, 1);
+                    remap.visitMethodInsn(Opcodes.INVOKESTATIC, "io/github/karlatemp/jhf/core/redirect/StackReMapInfo", "remap", REMAP_METHOD_M_DESC, false);
+                    remap.visitInsn(Opcodes.ARETURN);
+                    remap.visitMaxs(3, 2);
                 }
 
                 MethodVisitor alloc = jlaft.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "alloc", MIRROR_ALLOC_DESC = ("(J[JIILjava/lang/Class;)L" + JLA_MIRROR_CLASS_NAME + ";"), null, null);

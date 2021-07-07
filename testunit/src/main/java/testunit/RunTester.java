@@ -2,6 +2,7 @@ package testunit;
 
 import org.junit.jupiter.api.Assertions;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 
 public class RunTester {
@@ -30,6 +31,14 @@ public class RunTester {
         } catch (RuntimeException e) {
             e.printStackTrace(System.out);
             Assertions.assertEquals(e.getMessage(), "PERMISSION DENIED");
+        }
+        try {
+            Thread.sleep(1000);
+            AccessibleObject.class.getDeclaredMethod(
+                    "setAccessible", boolean.class
+            ).invoke(forName.getDeclaredField("i"), true);
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
         }
     }
 
