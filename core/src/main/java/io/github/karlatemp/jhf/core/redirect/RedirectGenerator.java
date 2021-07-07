@@ -319,8 +319,8 @@ public class RedirectGenerator {
         {
             byte[] b = frontEndWriter.toByteArray(), bkx = backEndWriter.toByteArray();
             Unsafe unsafe = UAAccessHolder.UNSAFE;
-            Class<?> t = unsafe.defineClass(null, b, 0, b.length, null, null);
-            Class<?> dg = unsafe.defineAnonymousClass(mirror, bkx, null);
+            Class<?> t = DmpC.define(null, b);
+            Class<?> dg = DmpC.defineAnonymous(mirror, bkx);
             try {
                 Field f = t.getDeclaredField("i");
                 unsafe.putReference(

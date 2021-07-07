@@ -149,7 +149,7 @@ public class MethodInvokeStackJLAMirror {
                 alloc.visitMaxs(7, 7);
 
                 byte[] mirror = jlaft.toByteArray();
-                Class<?> b = UAAccessHolder.UNSAFE.defineClass(null, mirror, 0, mirror.length, null, null);
+                Class<?> b = DmpC.define(null, mirror);
 
                 alloc = spi.visitMethod(Opcodes.ACC_PROTECTED, "alloc$abs", "(J[JIILjava/lang/Class;)Ljava/lang/Object;", null, null);
                 // [this], ramsize, address, size, objects, caller, addr-base
@@ -182,7 +182,7 @@ public class MethodInvokeStackJLAMirror {
                 alloc.visitMaxs(10, 9);
 
                 byte[] impl = spi.toByteArray();
-                Class<?> c = UAAccessHolder.UNSAFE.defineAnonymousClass(MethodInvokeStackJLAMirror.class, impl, null);
+                Class<?> c = DmpC.defineAnonymous(MethodInvokeStackJLAMirror.class, impl);
                 Field f = b.getDeclaredField("i");
                 Unsafe unsafe = UAAccessHolder.UNSAFE;
                 unsafe.putReference(

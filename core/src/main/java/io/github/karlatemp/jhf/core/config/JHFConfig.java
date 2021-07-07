@@ -90,4 +90,7 @@ public class JHFConfig {
 
     @Comment("Logging level, options: OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST, ALL")
     public Level loggingLevel = Level.ALL;
+
+    @Comment("Save generated classes")
+    public boolean saveGeneratedClasses = false;
 }
