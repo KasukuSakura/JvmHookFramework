@@ -40,6 +40,13 @@ class JHFBytecodeProvider implements IClassBytecodeProvider {
         }
     }
 
+    private static InputStream findC(String name) {
+        InputStream resp = JHFClassProvider.CCL.getResourceAsStream(name);
+        if (resp != null) return resp;
+        resp = ClassLoader.getSystemClassLoader().getResourceAsStream(name);
+        return resp;
+    }
+
     @Override
     public ClassNode getClassNode(String name) throws ClassNotFoundException, IOException {
         return getClassNode(name, true);
@@ -54,7 +61,7 @@ class JHFBytecodeProvider implements IClassBytecodeProvider {
         } else {
             rm = null;
         }
-        try (InputStream rs = JHFClassProvider.CCL.getResourceAsStream(name.replace('.', '/') + ".class")) {
+        try (InputStream rs = findC(name.replace('.', '/') + ".class")) {
             if (rs == null) throw new ClassNotFoundException(name);
             ClassNode nd = new ClassNode();
             new ClassReader(rs)
