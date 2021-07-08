@@ -337,5 +337,13 @@ public class RedirectGenerator {
                 throw new RuntimeException(e);
             }
         }
+
+        for (io.github.karlatemp.jhf.core.utils.RedirectInfos.RedirectInfo red : current) {
+            try {
+                MagicAccessorGenerator.gen(red);
+            } catch (Throwable throwable) {
+                throw new RuntimeException(throwable);
+            }
+        }
     }
 }

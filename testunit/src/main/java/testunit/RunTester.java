@@ -24,13 +24,13 @@ public class RunTester {
             forName.getDeclaredField("i").get(null);
         } catch (IllegalAccessException e) {
             e.printStackTrace(System.out);
-            Assertions.assertEquals(e.getMessage(), "PERMISSION DENIED");
+            Assertions.assertTrue(e.getMessage().contains("PERMISSION DENIED"));
         }
         try {
             forName.getDeclaredField("i").setAccessible(true);
         } catch (RuntimeException e) {
             e.printStackTrace(System.out);
-            Assertions.assertEquals(e.getMessage(), "PERMISSION DENIED");
+            Assertions.assertTrue(e.getMessage().contains("PERMISSION DENIED"));
         }
         try {
             Thread.sleep(1000);

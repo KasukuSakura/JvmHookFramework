@@ -8,6 +8,7 @@ import java.lang.reflect.*;
 
 import static io.github.karlatemp.jhf.core.redirect.InvokeType.invokeStatic;
 import static io.github.karlatemp.jhf.core.redirect.InvokeType.invokeVirtual;
+import static io.github.karlatemp.jhf.core.utils.HighExceptionThrown.newJLRInaccessibleObjectException;
 
 public class ReflectHook {
     @RedirectInfos(@RedirectInfos.Info(
@@ -27,6 +28,7 @@ public class ReflectHook {
     ))
     public static void hookClassForName(MethodInvokeStack stack) throws ClassNotFoundException {
         // TODO
+        System.out.println("[RH]: hook class invoked: " + stack.getAsObject(0));
     }
 
 
@@ -80,11 +82,11 @@ public class ReflectHook {
                     methods = @RedirectInfos.MethodInfo(name = "setAccessible", methodDesc = "(Z)V", invokeType = invokeVirtual)
             ),
     })
-    public static void hookSetAccessible(MethodInvokeStack stack) {
+    public static void hookSetAccessible(MethodInvokeStack stack) throws Throwable {
         AccessibleObject ao = (AccessibleObject) stack.getAsObject(0);
         if (!(ao instanceof Member)) return;
         if (DmpC.GENERATED_CLASSES.contains(((Member) ao).getDeclaringClass())) {
-            throw new RuntimeException("PERMISSION DENIED");
+            throw (Throwable) newJLRInaccessibleObjectException.invoke("PERMISSION DENIED, caller: " + stack.caller());
         }
     }
 }
