@@ -10,7 +10,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import static io.github.karlatemp.jhf.api.utils.RandomNameGenerator.GENERATOR;
-import static io.github.karlatemp.jhf.api.utils.RandomNameGenerator.INSTANCE;
 
 @SuppressWarnings("ConstantConditions")
 public class MethodInvokeStackJLAMirror {
@@ -63,7 +62,10 @@ public class MethodInvokeStackJLAMirror {
             POLL_METHOD_NAME,
             POLL_METHOD_DESC;
 
-    public static final String REMAP_METHOD_M_NAME, REMAP_METHOD_M_DESC = "(Ljava/lang/reflect/Method;)Ljava/lang/reflect/Method;";
+    public static final String
+
+            REMAP_METHOD_M_NAME,
+            REMAP_METHOD_M_DESC = "(Ljava/lang/Object;)Ljava/lang/Object;";
 
     static {
         try {
@@ -139,17 +141,17 @@ public class MethodInvokeStackJLAMirror {
                     hs.visitMaxs(2, 2);
                 }
                 { // method-remap
-                    jlaft.visitMethod(Opcodes.ACC_PROTECTED | Opcodes.ACC_ABSTRACT, "remap", REMAP_METHOD_M_DESC, null,null);
+                    jlaft.visitMethod(Opcodes.ACC_PROTECTED | Opcodes.ACC_ABSTRACT, "befMirror", REMAP_METHOD_M_DESC, null, null);
                     MethodVisitor remap = jlaft.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, REMAP_METHOD_M_NAME = "m-remap", REMAP_METHOD_M_DESC, null, null);
                     remap.visitFieldInsn(Opcodes.GETSTATIC, MIRROR_ALOC_NAME, "i", MANT);
                     remap.visitVarInsn(Opcodes.ALOAD, 0);
-                    remap.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MIRROR_ALOC_NAME, "remap", REMAP_METHOD_M_DESC, false);
+                    remap.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MIRROR_ALOC_NAME, "befMirror", REMAP_METHOD_M_DESC, false);
                     remap.visitInsn(Opcodes.ARETURN);
                     remap.visitMaxs(3, 1);
 
-                    remap = spi.visitMethod(Opcodes.ACC_PROTECTED, "remap", REMAP_METHOD_M_DESC, null,null);
+                    remap = spi.visitMethod(Opcodes.ACC_PROTECTED, "befMirror", REMAP_METHOD_M_DESC, null, null);
                     remap.visitVarInsn(Opcodes.ALOAD, 1);
-                    remap.visitMethodInsn(Opcodes.INVOKESTATIC, "io/github/karlatemp/jhf/core/redirect/StackReMapInfo", "remap", REMAP_METHOD_M_DESC, false);
+                    remap.visitMethodInsn(Opcodes.INVOKESTATIC, "io/github/karlatemp/jhf/core/redirect/ReflectionFactoryBridge", "preRequest", REMAP_METHOD_M_DESC, false);
                     remap.visitInsn(Opcodes.ARETURN);
                     remap.visitMaxs(3, 2);
                 }
