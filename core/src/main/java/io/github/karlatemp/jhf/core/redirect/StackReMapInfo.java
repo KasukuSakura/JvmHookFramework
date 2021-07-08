@@ -93,11 +93,21 @@ public class StackReMapInfo {
             for (MethodNode method : cn.methods) {
                 if (names.contains(method.name)) {
                     InsnList al = new InsnList();
+
                     al.add(new VarInsnNode(Opcodes.ALOAD, 1));
                     al.add(new MethodInsnNode(
                             Opcodes.INVOKESTATIC,
                             MethodInvokeStackJLAMirror.MIRROR_ALOC_NAME,
                             MethodInvokeStackJLAMirror.REMAP_METHOD_M_NAME,
+                            MethodInvokeStackJLAMirror.REMAP_METHOD_M_DESC, false
+                    ));
+                    al.add(new VarInsnNode(Opcodes.ASTORE, 1));
+
+                    al.add(new VarInsnNode(Opcodes.ALOAD, 1));
+                    al.add(new MethodInsnNode(
+                            Opcodes.INVOKESTATIC,
+                            MethodInvokeStackJLAMirror.MIRROR_ALOC_NAME,
+                            MethodInvokeStackJLAMirror.PREMAP_METHOD_M_NANE,
                             MethodInvokeStackJLAMirror.REMAP_METHOD_M_DESC, false
                     ));
                     Label ifNull = new Label();
