@@ -12,8 +12,11 @@ public class RunTester {
 
     public static void main(String[] args) throws Throwable {
         error();
+
+        Class.forName(RunTester.class.getName());
+
         Class.forName("java.lang.String", false, new NCL());
-        StackTraceElement traceElement = NCL.STE[NCL.STE.length - 2];
+        StackTraceElement traceElement = findS(NCL.STE);
         System.out.println(traceElement);
         Class<?> forName = Class.forName(traceElement.getClassName());
         System.out.println(forName);
@@ -40,6 +43,24 @@ public class RunTester {
         } catch (Exception e) {
             e.printStackTrace(System.out);
         }
+    }
+
+    private static StackTraceElement findS(StackTraceElement[] ste) {
+        StackTraceElement latest = null;
+        int i = 0;
+        for (; i < ste.length; i++) {
+            if (ste[i].getClassName().startsWith("testunit")) {
+                i++;
+                break;
+            }
+        }
+        for (; i < ste.length; i++) {
+            if (!ste[i].getClassName().startsWith("java.lang.")) {
+                break;
+            }
+            latest = ste[i];
+        }
+        return latest;
     }
 
     public static class NCL extends ClassLoader {

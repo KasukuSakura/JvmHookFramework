@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class MarkerMirrorInitialize {
+    public static String PubMagicAccessorImplJdkName; // Don't modify this value
+
     private static void init() throws Throwable {
         ClassLoader cc = MarkerMirrorInitialize.class.getClassLoader();
         Field CUSTOM_C_FIND = null;
@@ -33,13 +35,14 @@ public class MarkerMirrorInitialize {
             CUSTOM_C_FIND = cc.getClass().getDeclaredField("CUSTOM_C_FIND");
         } catch (NoSuchFieldException ignore) {
         }
+        String mai;
         String[] mappings = {
                 "FieldAccessor",
                 "FieldAccessorImpl",
                 "ConstructorAccessor",
                 "ConstructorAccessorImpl",
                 "MethodAccessor",
-                "MethodAccessorImpl",
+                mai = "MethodAccessorImpl",
                 "MagicAccessorImpl",
         };
         if (CUSTOM_C_FIND != null) {
@@ -69,6 +72,10 @@ public class MarkerMirrorInitialize {
                     Class<?> target = Class.forName(pkgName + cx);
                     ClassWriter mirror = new ClassWriter(0);
                     String pubN = pkgNameI + "Pub" + cx;
+                    //noinspection StringEquality
+                    if (cx == mai) {
+                        PubMagicAccessorImplJdkName = pubN;
+                    }
                     String realPubN = "io/github/karlatemp/jhf/reflect/jdk/" + cx;
                     if (target.isInterface()) {
                         mirror.visit(
@@ -119,7 +126,7 @@ public class MarkerMirrorInitialize {
                         init.visitMaxs(3, 3);
 
                         c = mirror.toByteArray();
-                        cvw = usf.defineClass(null, c, 0, c.length, null, null);
+                        cvw = usf.defineClass(null, c, 0, c.length, dcc, null);
                         mirrors.put(cvw.getName(), cvw);
 
 

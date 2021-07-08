@@ -28,7 +28,7 @@ tasks.create('startTestUnit', JavaExec.class) { JavaExec exec ->
     exec.classpath = project.configurations.runtimeClasspath
     exec.classpath += sourceSets.main.output
 
-    exec.mainClass.set('testunit.RunTester')
+    exec.mainClass.set('testunit.Startup')
     exec.workingDir = workingDir
 }
 

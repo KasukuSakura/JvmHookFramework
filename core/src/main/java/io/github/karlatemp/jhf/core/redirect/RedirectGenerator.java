@@ -1,7 +1,10 @@
 package io.github.karlatemp.jhf.core.redirect;
 
 import io.github.karlatemp.jhf.api.utils.*;
-import io.github.karlatemp.jhf.core.utils.*;
+import io.github.karlatemp.jhf.core.utils.DmpC;
+import io.github.karlatemp.jhf.core.utils.MethodInvokeStackImpl;
+import io.github.karlatemp.jhf.core.utils.MethodInvokeStackJLAMirror;
+import io.github.karlatemp.jhf.core.utils.UAAccessHolder;
 import io.github.karlatemp.unsafeaccessor.Unsafe;
 import org.objectweb.asm.*;
 
@@ -15,6 +18,7 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.Stream;
 
+import static io.github.karlatemp.jhf.api.markers.MarkerMirrorInitialize.PubMagicAccessorImplJdkName;
 import static io.github.karlatemp.jhf.api.utils.RandomNameGenerator.GENERATOR;
 
 public class RedirectGenerator {
@@ -70,7 +74,11 @@ public class RedirectGenerator {
         String frontTypeName = "L" + frontEndName + ";";
         String backendName = mirror.getName().replace('.', '/') + "$" + GENERATOR.getNextName(null);
 
-        frontEndWriter.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT, frontEndName, null, "java/lang/Object", null);
+        frontEndWriter.visit(Opcodes.V1_8,
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
+                frontEndName, null,
+                PubMagicAccessorImplJdkName == null ? "java/lang/Object" : PubMagicAccessorImplJdkName,
+                null);
         backEndWriter.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, backendName, null, frontEndName, null);
         frontEndWriter.visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE, "i", frontTypeName, null, null);
 
