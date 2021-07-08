@@ -1,5 +1,6 @@
 package io.github.karlatemp.jhf.core.redirect;
 
+import io.github.karlatemp.jhf.api.utils.ClassFinder;
 import io.github.karlatemp.jhf.api.utils.SneakyThrow;
 import io.github.karlatemp.jhf.core.utils.RedirectInfos;
 import io.github.karlatemp.jhf.core.utils.*;

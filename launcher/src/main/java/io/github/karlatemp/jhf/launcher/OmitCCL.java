@@ -4,9 +4,6 @@ import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -18,12 +15,14 @@ import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.function.Function;
 
 class OmitCCL extends ClassLoader {
     private final long image;
     private final FlattenJarFile info;
     private final PermissionCollection pcc;
     private final URL base;
+    protected Function<String, Class<?>> CUSTOM_C_FIND; // setup by reflection in core
 
     /*
     static final MethodHandle getDefinedPackage_handle;
@@ -100,6 +99,10 @@ class OmitCCL extends ClassLoader {
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
+        if (CUSTOM_C_FIND != null) {
+            Class<?> rsp = CUSTOM_C_FIND.apply(name);
+            if (rsp != null) return rsp;
+        }
         String rsName = name.replace('.', '/') + ".class";
         for (FlattenJarFile.ResPair s : info.resources) {
             if (s.name.equals(rsName)) {

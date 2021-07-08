@@ -1,4 +1,4 @@
-package io.github.karlatemp.jhf.core.utils;
+package io.github.karlatemp.jhf.api.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
