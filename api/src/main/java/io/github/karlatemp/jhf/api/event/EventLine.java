@@ -1,6 +1,7 @@
 package io.github.karlatemp.jhf.api.event;
 
 import io.github.karlatemp.jhf.api.JvmHookFramework;
+import io.github.karlatemp.jhf.api.utils.SneakyThrow;
 
 import java.util.Collection;
 import java.util.EnumMap;
@@ -38,5 +39,13 @@ public class EventLine<T> {
 
     protected void onHandleException(EventHandler<? super T> handler, T event, Exception exception) {
         JvmHookFramework.getInstance().onEventException(this, handler, event, exception);
+    }
+
+    public static class DirectThrowException<T> extends EventLine<T> {
+        @Override
+        protected void onHandleException(EventHandler<? super T> handler, T event, Exception exception) {
+            JvmHookFramework.getInstance().hiddenStackTrack(exception);
+            SneakyThrow.throw0(exception);
+        }
     }
 }

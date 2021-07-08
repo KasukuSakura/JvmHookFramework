@@ -1,11 +1,9 @@
 package io.github.karlatemp.jhf.api.events;
 
-import io.github.karlatemp.jhf.api.JvmHookFramework;
 import io.github.karlatemp.jhf.api.event.EventHandler;
 import io.github.karlatemp.jhf.api.event.EventLine;
 import io.github.karlatemp.jhf.api.event.EventPriority;
 import io.github.karlatemp.jhf.api.utils.FilterMembers;
-import io.github.karlatemp.jhf.api.utils.SneakyThrow;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -14,17 +12,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class ReflectionInvokeEvent {
-    public static final EventLine<ReflectionInvokeEvent> EVENT_LINE = new EventLine<ReflectionInvokeEvent>() {
-        @Override
-        protected void onHandleException(
-                EventHandler<? super ReflectionInvokeEvent> handler,
-                ReflectionInvokeEvent event,
-                Exception exception
-        ) {
-            JvmHookFramework.getInstance().hiddenStackTrack(exception);
-            SneakyThrow.throw0(exception);
-        }
-    };
+    public static final EventLine<ReflectionInvokeEvent> EVENT_LINE = new EventLine.DirectThrowException<>();
 
     public Type type;
     public Object resp;
