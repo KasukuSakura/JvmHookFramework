@@ -3,6 +3,7 @@ package io.github.karlatemp.jhf.core.startup;
 import io.github.karlatemp.jhf.api.JvmHookFramework;
 import io.github.karlatemp.jhf.api.event.EventPriority;
 import io.github.karlatemp.jhf.api.events.TransformBytecodeEvent;
+import io.github.karlatemp.jhf.api.markers.MarkerMirrorInitialize;
 import io.github.karlatemp.jhf.core.builtin.BuiltInProcessors;
 import io.github.karlatemp.jhf.core.config.JHFConfig;
 import io.github.karlatemp.jhf.core.mixin.JHFClassProvider;
@@ -69,6 +70,7 @@ public class JvmHookFrameworkStartup {
     }
 
     public static void bootstrap(Instrumentation instrumentation) throws Throwable {
+        MarkerMirrorInitialize.initialize();
         JHFConfig.reload();
 
         run();
