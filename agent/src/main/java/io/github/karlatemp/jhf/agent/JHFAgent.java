@@ -27,7 +27,7 @@ public class JHFAgent {
             bis.readFully(x);
             data.put(key, x);
         }
-        new ClassLoader() {
+        new ClassLoader(ClassLoader.getSystemClassLoader().getParent()) {
             @Override
             protected Class<?> findClass(String name) throws ClassNotFoundException {
                 byte[] bytes = data.get(name.replace('.', '/') + ".class");
