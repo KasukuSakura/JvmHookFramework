@@ -89,4 +89,17 @@ public class ReflectHook {
             throw (Throwable) newJLRInaccessibleObjectException.invoke("PERMISSION DENIED, caller: " + stack.caller());
         }
     }
+
+    @RedirectInfos(@RedirectInfos.Info(
+            value = AccessibleObject.class,
+            methods = @RedirectInfos.MethodInfo(name = "trySetAccessible", methodDesc = "()Z", invokeType = invokeVirtual)
+    ))
+    public static void hookTrySetAccessible(MethodInvokeStack stack) throws Throwable {
+        AccessibleObject ao = (AccessibleObject) stack.getAsObject(0);
+        if (!(ao instanceof Member)) return;
+        if (DmpC.GENERATED_CLASSES.contains(((Member) ao).getDeclaringClass())) {
+            stack.set(stack.getSize(), false);
+            stack.fastReturn();
+        }
+    }
 }
