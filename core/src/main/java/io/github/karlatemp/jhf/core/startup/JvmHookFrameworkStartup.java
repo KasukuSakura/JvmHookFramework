@@ -4,13 +4,14 @@ import io.github.karlatemp.jhf.api.JvmHookFramework;
 import io.github.karlatemp.jhf.api.event.EventPriority;
 import io.github.karlatemp.jhf.api.events.TransformBytecodeEvent;
 import io.github.karlatemp.jhf.api.markers.MarkerMirrorInitialize;
-import io.github.karlatemp.jhf.api.utils.SneakyThrow;
+import io.github.karlatemp.jhf.api.utils.ClassFinder;
 import io.github.karlatemp.jhf.core.builtin.BuiltInProcessors;
 import io.github.karlatemp.jhf.core.config.JHFConfig;
 import io.github.karlatemp.jhf.core.mixin.JHFBytecodeProvider;
 import io.github.karlatemp.jhf.core.mixin.JHFClassProvider;
 import io.github.karlatemp.jhf.core.plugin.PluginClassLoader;
 import io.github.karlatemp.jhf.core.redirect.StackReMapInfo;
+import io.github.karlatemp.jhf.core.utils.PlatformClassLoaders;
 import io.github.karlatemp.mxlib.MxLib;
 import io.github.karlatemp.mxlib.logger.MLogger;
 import io.github.karlatemp.mxlib.utils.StringBuilderFormattable;
@@ -58,11 +59,13 @@ public class JvmHookFrameworkStartup {
     static class VMTransfer implements ClassFileTransformer {
         static final ClassLoader VMH = VMTransfer.class.getClassLoader();
         static ClassLoader PLCL;
+        static ClassLoader SYS_PLATFORM_CCL;
         MLogger logger = MxLib.getLoggerOrStd("JHF.TF");
 
         @Override
         public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
             if (loader == null) return null; // java.base
+            if (loader == SYS_PLATFORM_CCL) return null; // JDK System Platform ClassLoader
             if (loader == VMH) return null;  // JvmHookFramework
             if (loader == PLCL) return null; // plugins
             TransformBytecodeEvent event = new TransformBytecodeEvent();
@@ -96,6 +99,11 @@ public class JvmHookFrameworkStartup {
     public static void bootstrap(Instrumentation instrumentation) throws Throwable {
         MarkerMirrorInitialize.initialize();
         JHFConfig.reload();
+        VMTransfer.SYS_PLATFORM_CCL = ClassFinder.findClass(
+                JvmHookFrameworkStartup.class.getClassLoader(),
+                "io.github.karlatemp.jhf.core.utils.PlatformClassLoaders9",
+                "io.github.karlatemp.jhf.core.utils.PlatformClassLoaders"
+        ).asSubclass(PlatformClassLoaders.class).getConstructor().newInstance().platformClassLoader();
 
         run();
         PluginClassLoader.loadAndBootstrap(
