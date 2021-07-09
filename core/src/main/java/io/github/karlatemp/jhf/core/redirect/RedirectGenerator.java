@@ -383,7 +383,7 @@ public class RedirectGenerator {
                 ROOT.findVirtual(c, name, mt);
             }
             return true;
-        } catch (NoSuchMethodException ignore) {
+        } catch (NoSuchMethodException | NoClassDefFoundError | ClassNotFoundException | TypeNotPresentException ignore) {
             return false;
         } catch (Throwable throwable) {
             MxLib.getLogger().warn(throwable);
