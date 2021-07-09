@@ -93,4 +93,13 @@ public class JHFConfig {
 
     @Comment("Save generated classes")
     public boolean saveGeneratedClasses = false;
+
+    @Comment("Verbose")
+    public Verbose verbose = new Verbose();
+
+    @ConfigSerializable
+    public static class Verbose {
+        @Comment("Bytecode transform")
+        public boolean bytecodeTransform = false;
+    }
 }
