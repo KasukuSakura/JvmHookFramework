@@ -59,11 +59,16 @@ public class RunTester {
         } catch (LinkageError throwable) {
             throwable.printStackTrace(System.out);
         }
+        RunTester.class.getDeclaredMethod("normalReflection").invoke(null);
+    }
+
+    private static void normalReflection() {
+        System.out.println("OK");
     }
 
     private static void inject(String name) {
         ClassWriter cw = new ClassWriter(0);
-        cw.visit(Opcodes.V1_8, 0, "testunit/S_R_Z-USF", null, name.replace('.', '/'), null);
+        cw.visit(Opcodes.V1_8, 0, "testunit/S_R_Z-USF", null, "sun/reflect/MagicAccessorImpl", null);
         Svc cl = new Svc();
         Class<?> c = cl.def(cw.toByteArray());
         System.out.println(c);

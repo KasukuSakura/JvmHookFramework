@@ -60,6 +60,7 @@ public class JvmHookFrameworkStartup {
         static final ClassLoader VMH = VMTransfer.class.getClassLoader();
         static ClassLoader PLCL;
         static ClassLoader SYS_PLATFORM_CCL;
+        static Class<?> DELEGATING_CLASSLOADER_CLASS;
         MLogger logger = MxLib.getLoggerOrStd("JHF.TF");
 
         @Override
@@ -68,6 +69,10 @@ public class JvmHookFrameworkStartup {
             if (loader == SYS_PLATFORM_CCL) return null; // JDK System Platform ClassLoader
             if (loader == VMH) return null;  // JvmHookFramework
             if (loader == PLCL) return null; // plugins
+
+            if (DELEGATING_CLASSLOADER_CLASS != null && DELEGATING_CLASSLOADER_CLASS.isInstance(loader))
+                return null; // java.lang.reflect.
+
             TransformBytecodeEvent event = new TransformBytecodeEvent();
             event.bytecode = classfileBuffer;
             event.name = className;
@@ -104,6 +109,11 @@ public class JvmHookFrameworkStartup {
                 "io.github.karlatemp.jhf.core.utils.PlatformClassLoaders9",
                 "io.github.karlatemp.jhf.core.utils.PlatformClassLoaders"
         ).asSubclass(PlatformClassLoaders.class).getConstructor().newInstance().platformClassLoader();
+
+        VMTransfer.DELEGATING_CLASSLOADER_CLASS = ClassFinder.findClass(null,
+                "jdk.internal.reflect.DelegatingClassLoader",
+                "sun.reflect.DelegatingClassLoader"
+        );
 
         run();
         PluginClassLoader.loadAndBootstrap(
