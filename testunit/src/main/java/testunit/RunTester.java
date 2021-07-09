@@ -5,6 +5,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.opentest4j.AssertionFailedError;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 
@@ -35,6 +36,12 @@ public class RunTester {
         try {
             forName.getDeclaredField("i").setAccessible(true);
         } catch (RuntimeException e) {
+            e.printStackTrace(System.out);
+            Assertions.assertTrue(e.getMessage().contains("PERMISSION DENIED"));
+        }
+        try {
+            MethodHandles.lookup().unreflectGetter(forName.getDeclaredField("i"));
+        } catch (IllegalAccessException e) {
             e.printStackTrace(System.out);
             Assertions.assertTrue(e.getMessage().contains("PERMISSION DENIED"));
         }

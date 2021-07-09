@@ -8,10 +8,16 @@ import java.lang.invoke.MethodType;
 
 public class HighExceptionThrown {
     public static final MethodHandle newJLRInaccessibleObjectException;
+    public static final MethodHandle newJLIllegalAccessException;
 
     static {
         try {
             MethodHandles.Lookup lk = MethodHandles.lookup();
+
+            newJLIllegalAccessException = lk.findConstructor(
+                    IllegalAccessException.class,
+                    MethodType.methodType(void.class, String.class)
+            );
 
             newJLRInaccessibleObjectException = lk.findConstructor(
                     ClassFinder.findClass(

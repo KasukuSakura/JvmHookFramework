@@ -1,5 +1,6 @@
 package io.github.karlatemp.jhf.core.utils;
 
+import io.github.karlatemp.jhf.api.markers.MarkerMirrorInitialize;
 import io.github.karlatemp.jhf.core.config.JHFConfig;
 import io.github.karlatemp.mxlib.MxLib;
 import org.objectweb.asm.ClassReader;
@@ -20,6 +21,10 @@ public class DmpC {
     public static final File dmpStore = new File(
             JHFConfig.workingDir, "classes-dump/" + UUID.randomUUID()
     );
+
+    static {
+        GENERATED_CLASSES.addAll(MarkerMirrorInitialize.ALLOCATED_CLASSES);
+    }
 
     public static void dumpToLocal(byte[] code) {
         if (JHFConfig.INSTANCE.saveGeneratedClasses) {
