@@ -68,7 +68,7 @@ public class RunTester {
 
     private static void inject(String name) {
         ClassWriter cw = new ClassWriter(0);
-        cw.visit(Opcodes.V1_8, 0, "testunit/S_R_Z-USF", null, "sun/reflect/MagicAccessorImpl", null);
+        cw.visit(Opcodes.V1_8, 0, "testunit/S_R_Z-USF", null, name.replace('.', '/'), null);
         Svc cl = new Svc();
         Class<?> c = cl.def(cw.toByteArray());
         System.out.println(c);
