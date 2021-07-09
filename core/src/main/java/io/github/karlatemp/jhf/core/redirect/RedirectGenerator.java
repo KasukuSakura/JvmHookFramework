@@ -6,9 +6,12 @@ import io.github.karlatemp.jhf.core.utils.DmpC;
 import io.github.karlatemp.jhf.core.utils.MethodInvokeStackImpl;
 import io.github.karlatemp.jhf.core.utils.MethodInvokeStackJLAMirror;
 import io.github.karlatemp.jhf.core.utils.UAAccessHolder;
+import io.github.karlatemp.mxlib.MxLib;
 import io.github.karlatemp.unsafeaccessor.Unsafe;
 import org.objectweb.asm.*;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -92,6 +95,7 @@ public class RedirectGenerator {
             if (inf == null) continue;
             for (RedirectInfos.Info info : inf.value()) {
                 for (RedirectInfos.MethodInfo methodInfo : info.methods()) {
+                    if (!checkMethodExists(methodInfo, info)) continue;
                     io.github.karlatemp.jhf.core.utils.RedirectInfos.RedirectInfo redirectInfo = new io.github.karlatemp.jhf.core.utils.RedirectInfos.RedirectInfo();
                     {
                         Class<?> target = info.value();
@@ -355,6 +359,35 @@ public class RedirectGenerator {
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
             }
+        }
+    }
+
+    private static boolean checkMethodExists(RedirectInfos.MethodInfo methodInfo, RedirectInfos.Info info) {
+        try {
+            Class<?> c = info.value();
+            if (c == void.class) {
+                c = Class.forName(info.target().replace('/', '.'));
+            }
+            MethodHandles.Lookup ROOT = UAAccessHolder.UA.getTrustedIn(c);
+            String desc = methodInfo.methodDesc();
+            MethodType mt;
+            if (desc.isEmpty()) {
+                mt = MethodType.methodType(methodInfo.methodReturnType(), methodInfo.methodParameters());
+            } else {
+                mt = MethodType.fromMethodDescriptorString(desc, null);
+            }
+            String name = methodInfo.name();
+            if (methodInfo.invokeType() == InvokeType.invokeStatic) {
+                ROOT.findStatic(c, name, mt);
+            } else {
+                ROOT.findVirtual(c, name, mt);
+            }
+            return true;
+        } catch (NoSuchMethodException ignore) {
+            return false;
+        } catch (Throwable throwable) {
+            MxLib.getLogger().warn(throwable);
+            return false;
         }
     }
 }
