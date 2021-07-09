@@ -1,6 +1,7 @@
 package io.github.karlatemp.jhf.core.redirect;
 
 import io.github.karlatemp.jhf.api.utils.*;
+import io.github.karlatemp.jhf.core.builtin.ExtendsForbidden;
 import io.github.karlatemp.jhf.core.utils.DmpC;
 import io.github.karlatemp.jhf.core.utils.MethodInvokeStackImpl;
 import io.github.karlatemp.jhf.core.utils.MethodInvokeStackJLAMirror;
@@ -333,7 +334,9 @@ public class RedirectGenerator {
             byte[] b = frontEndWriter.toByteArray(), bkx = backEndWriter.toByteArray();
             Unsafe unsafe = UAAccessHolder.UNSAFE;
             Class<?> t = DmpC.define(null, b);
+            ExtendsForbidden.DENIED.add(t.getName().replace('.', '/'));
             Class<?> dg = DmpC.defineAnonymous(mirror, bkx);
+            ExtendsForbidden.DENIED.add(dg.getName().replace('.', '/'));
             try {
                 Field f = t.getDeclaredField("i");
                 unsafe.putReference(

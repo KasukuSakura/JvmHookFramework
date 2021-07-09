@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     implementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    implementation 'org.ow2.asm:asm-tree:9.1'
 }
 
 tasks.create('startTestUnit', JavaExec.class) { JavaExec exec ->

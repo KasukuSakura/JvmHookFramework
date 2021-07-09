@@ -1,6 +1,9 @@
 package testunit;
 
 import org.junit.jupiter.api.Assertions;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
+import org.opentest4j.AssertionFailedError;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
@@ -43,6 +46,20 @@ public class RunTester {
         } catch (Exception e) {
             e.printStackTrace(System.out);
         }
+        try {
+            inject(forName.getName());
+            throw new AssertionFailedError("Inject class loaded.");
+        } catch (LinkageError throwable) {
+            throwable.printStackTrace(System.out);
+        }
+    }
+
+    private static void inject(String name) {
+        ClassWriter cw = new ClassWriter(0);
+        cw.visit(Opcodes.V1_8, 0, "testunit/S_R_Z-USF", null, name.replace('.', '/'), null);
+        Svc cl = new Svc();
+        Class<?> c = cl.def(cw.toByteArray());
+        System.out.println(c);
     }
 
     private static StackTraceElement findS(StackTraceElement[] ste) {
@@ -74,6 +91,12 @@ public class RunTester {
         public Class<?> loadClass(String name) throws ClassNotFoundException {
             STE = Thread.currentThread().getStackTrace();
             return super.loadClass(name);
+        }
+    }
+
+    public static class Svc extends ClassLoader {
+        public Class<?> def(byte[] code) {
+            return defineClass(null, code, 0, code.length, null);
         }
     }
 }

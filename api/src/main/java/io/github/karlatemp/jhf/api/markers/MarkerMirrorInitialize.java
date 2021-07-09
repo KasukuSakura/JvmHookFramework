@@ -17,13 +17,12 @@ import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 public class MarkerMirrorInitialize {
     public static String PubMagicAccessorImplJdkName; // Don't modify this value
+    public static final Collection<Class<?>> ALLOCATED_CLASSES;
 
     private static void init() throws Throwable {
         ClassLoader cc = MarkerMirrorInitialize.class.getClassLoader();
@@ -85,6 +84,7 @@ public class MarkerMirrorInitialize {
                         );
                         byte[] c = mirror.toByteArray();
                         Class<?> cvw = usf.defineClass(null, c, 0, c.length, dcc, null);
+                        ALLOCATED_CLASSES.add(cvw);
                         MA.addExports(MA.getModule(cvw), dgC.getPackage().getName(), moduleTHIZ);
                         mirrors.put(cvw.getName(), cvw);
 
@@ -112,6 +112,7 @@ public class MarkerMirrorInitialize {
                         byte[] c = mirror.toByteArray();
                         Class<?> cvw = usf.defineClass(null, c, 0, c.length, null, null);
                         mirrors.put(cvw.getName(), cvw);
+                        ALLOCATED_CLASSES.add(cvw);
 
                         mirror = new ClassWriter(0);
                         mirror.visit(
@@ -127,6 +128,7 @@ public class MarkerMirrorInitialize {
 
                         c = mirror.toByteArray();
                         cvw = usf.defineClass(null, c, 0, c.length, dcc, null);
+                        ALLOCATED_CLASSES.add(cvw);
                         mirrors.put(cvw.getName(), cvw);
 
 
@@ -164,6 +166,7 @@ public class MarkerMirrorInitialize {
 
     static {
         try {
+            ALLOCATED_CLASSES = new HashSet<>();
             init();
         } catch (Throwable throwable) {
             throw new ExceptionInInitializerError(throwable);
