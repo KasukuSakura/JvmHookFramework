@@ -74,15 +74,15 @@ public class JvmHookFrameworkStartup {
             event.classLoader = loader;
             event.protectionDomain = protectionDomain;
 
-            if (JHFConfig.INSTANCE.verbose.bytecodeTransform) {
-                logger.debug(StringBuilderFormattable.by("Transforming ").plusMsg(className).plusMsg(" in classloader ").plusMsg(loader));
-            }
-
             JHFBytecodeProvider.CC_IN_TRANS = loader;
             JHFBytecodeProvider.LOADING_C = classfileBuffer;
             JHFBytecodeProvider.LOADING_N = className;
 
             try {
+                if (JHFConfig.INSTANCE.verbose.bytecodeTransform) {
+                    logger.debug(StringBuilderFormattable.by("Transforming ").plusMsg(className).plusMsg(" in classloader ").plusMsg(loader));
+                }
+
                 byte[] resp = TransformBytecodeEvent.EVENT_LINE.post(event).bytecode;
 
                 if (resp == classfileBuffer) return null;
