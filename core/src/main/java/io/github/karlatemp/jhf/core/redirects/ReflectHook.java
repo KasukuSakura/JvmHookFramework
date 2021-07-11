@@ -1,14 +1,17 @@
 package io.github.karlatemp.jhf.core.redirects;
 
 import io.github.karlatemp.jhf.api.utils.MethodInvokeStack;
+import io.github.karlatemp.jhf.core.redirect.RedirectGenerator;
 import io.github.karlatemp.jhf.core.redirect.RedirectInfos;
 import io.github.karlatemp.jhf.core.utils.DmpC;
+import io.github.karlatemp.jhf.core.utils.RedirectInfos.RedirectInfo;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.*;
 
+import static io.github.karlatemp.jhf.api.utils.CCL.getClassLoader;
 import static io.github.karlatemp.jhf.core.redirect.InvokeType.invokeStatic;
 import static io.github.karlatemp.jhf.core.redirect.InvokeType.invokeVirtual;
 import static io.github.karlatemp.jhf.core.utils.HighExceptionThrown.newJLIllegalAccessException;
@@ -150,10 +153,65 @@ public class ReflectHook {
 
     @RedirectInfos(@RedirectInfos.Info(
             value = MethodHandles.Lookup.class,
+            methods = @RedirectInfos.MethodInfo(invokeType = invokeVirtual, name = "findStatic", methodReturnType = MethodHandle.class, methodParameters = {Class.class, String.class, MethodType.class})
+    ))
+    public static void hookLookupFindStatic(MethodInvokeStack stack) throws Throwable {
+        hookFinding(stack, true, false);
+    }
+
+    @RedirectInfos(@RedirectInfos.Info(
+            value = MethodHandles.Lookup.class,
+            methods = @RedirectInfos.MethodInfo(invokeType = invokeVirtual, name = "findConstructor", methodReturnType = MethodHandle.class, methodParameters = {Class.class, MethodType.class})
+    ))
+    public static void hookLookupFindConstructor(MethodInvokeStack stack) throws Throwable {
+        hookFinding(stack, false, true);
+    }
+
+    @RedirectInfos(@RedirectInfos.Info(
+            value = MethodHandles.Lookup.class,
+            methods = @RedirectInfos.MethodInfo(invokeType = invokeVirtual, name = "findVirtual", methodReturnType = MethodHandle.class, methodParameters = {Class.class, String.class, MethodType.class})
+    ))
+    public static void hookLookupFindVirtual(MethodInvokeStack stack) throws Throwable {
+        hookFinding(stack, false, false);
+    }
+
+    private static void hookFinding(MethodInvokeStack stack, boolean isStatic, boolean isConstructor) throws Throwable {
+        checkClassAccess(stack, stack.getAsObject(1), (Class<?>) stack.getAsObject(1), newJLIllegalAccessException);
+
+        MethodHandles.Lookup lookup = (MethodHandles.Lookup) stack.getAsObject(0);
+        Class<?> c = (Class<?>) stack.getAsObject(1);
+        if (getClassLoader(c) != null) return;
+
+        String ci = c.getName().replace('.', '/');
+        String metName = isConstructor ? "<init>" : (String) stack.getAsObject(2);
+        MethodType mt = (MethodType) stack.getAsObject(isConstructor ? 2 : 3);
+        String desc = mt.toMethodDescriptorString();
+        for (RedirectInfo redirectInfo : RedirectGenerator.redirectInfos) {
+            if (!redirectInfo.isStatic) continue;
+            if (!redirectInfo.sourceOwner.equals(ci)) continue;
+            if (!redirectInfo.sourceMethodDesc.equals(desc)) continue;
+            if (isConstructor) {
+                lookup.findConstructor(c, mt); // check-permission
+            } else if (isStatic) {
+                lookup.findStatic(c, metName, mt); // check-permission
+            } else {
+                lookup.findVirtual(c, metName, mt); // check-permission
+            }
+            Class<?> bridge = Class.forName(redirectInfo.owner.replace('/', '.'), false, null);
+            stack.fastReturn();
+            stack.set(stack.getSize(), lookup.findStatic(
+                    bridge,
+                    redirectInfo.methodName,
+                    isStatic ? mt : MethodType.fromMethodDescriptorString(redirectInfo.methodDesc, null)
+            ));
+            return;
+        }
+    }
+
+
+    @RedirectInfos(@RedirectInfos.Info(
+            value = MethodHandles.Lookup.class,
             methods = {
-                    @RedirectInfos.MethodInfo(invokeType = invokeVirtual, name = "findStatic", methodReturnType = MethodHandle.class, methodParameters = {Class.class, String.class, MethodType.class}),
-                    @RedirectInfos.MethodInfo(invokeType = invokeVirtual, name = "findVirtual", methodReturnType = MethodHandle.class, methodParameters = {Class.class, String.class, MethodType.class}),
-                    @RedirectInfos.MethodInfo(invokeType = invokeVirtual, name = "findConstructor", methodReturnType = MethodHandle.class, methodParameters = {Class.class, MethodType.class}),
                     @RedirectInfos.MethodInfo(invokeType = invokeVirtual, name = "accessClass", methodReturnType = Class.class, methodParameters = {Class.class}),
                     @RedirectInfos.MethodInfo(invokeType = invokeVirtual, name = "findSpecial", methodReturnType = MethodHandle.class, methodParameters = {Class.class, String.class, MethodType.class, Class.class}),
                     @RedirectInfos.MethodInfo(invokeType = invokeVirtual, name = "findGetter", methodReturnType = MethodHandle.class, methodParameters = {Class.class, String.class, Class.class}),
@@ -164,7 +222,7 @@ public class ReflectHook {
                     @RedirectInfos.MethodInfo(invokeType = invokeVirtual, name = "findStaticVarHandle", methodDesc = "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/invoke/VarHandle;"),
             }
     ))
-    public static void hookLookupFindMethods(MethodInvokeStack stack) throws Throwable {
+    public static void hookFinding(MethodInvokeStack stack) throws Throwable {
         checkClassAccess(stack, stack.getAsObject(1), (Class<?>) stack.getAsObject(1), newJLIllegalAccessException);
     }
 

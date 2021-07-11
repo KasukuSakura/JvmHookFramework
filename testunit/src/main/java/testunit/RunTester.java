@@ -9,6 +9,7 @@ import org.opentest4j.AssertionFailedError;
 
 import java.io.FileInputStream;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -90,6 +91,14 @@ public class RunTester {
             e.printStackTrace(System.out);
             Assertions.assertTrue(e.getMessage().contains("PERMISSION DENIED"));
         }
+
+        Assertions.assertNotSame(
+                MethodHandles.lookup().revealDirect(
+                        MethodHandles.lookup().findStatic(AccessibleObject.class, "setAccessible", MethodType.methodType(void.class, AccessibleObject[].class, boolean.class))
+                ).getDeclaringClass(),
+                AccessibleObject.class
+        );
+
         RunTester.class.getDeclaredMethod("normalReflection").invoke(null);
         new FileInputStream(".jvm-hook-framework/config.conf").close();
         FileInputStream.class.getConstructor(String.class)
