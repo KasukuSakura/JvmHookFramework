@@ -169,12 +169,14 @@ public class ReflectHook {
     }
 
 
-    // TODO: public static Lookup privateLookupIn(Class<?> targetClass, Lookup caller)
+    @RedirectInfos(@RedirectInfos.Info(
+            value = MethodHandles.class,
+            methods =
+            @RedirectInfos.MethodInfo(invokeType = invokeStatic, name = "privateLookupIn", methodReturnType = MethodHandles.Lookup.class, methodParameters = {Class.class, MethodHandles.Lookup.class})
+    ))
     public static void hookPrivateLookupIn(MethodInvokeStack stack) throws Throwable {
         Class<?> c = (Class<?>) stack.getAsObject(0);
         if (c == null) return;
-        if (DmpC.GENERATED_CLASSES.contains(c)) {
-            throw new IllegalAccessException("PERMISSION DENIED, not allowed access '" + c + "' from " + stack.caller());
-        }
+        checkClassAccess(stack, stack.getAsObject(1), c, newJLIllegalAccessException);
     }
 }
