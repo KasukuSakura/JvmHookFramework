@@ -44,7 +44,7 @@ public class ReflectHook {
     private static void checkMemberAccess(MethodInvokeStack stack, Member member, MethodHandle exceptionAlloc) throws Throwable {
         checkClassAccess(stack, member, member.getDeclaringClass(), exceptionAlloc);
         if (member instanceof Field && member.getDeclaringClass() == MethodHandles.Lookup.class) {
-            throw (Throwable) exceptionAlloc.invoke("Now allowed set accessible of " + member);
+            throw (Throwable) exceptionAlloc.invoke("PERMISSION DENIED, not allowed set accessible of " + member);
         }
     }
 
