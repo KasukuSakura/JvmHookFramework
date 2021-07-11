@@ -141,6 +141,7 @@ public class MagicAccessorGenerator {
         if (sort == Type.ARRAY) {
             visitor.visitTypeInsn(Opcodes.CHECKCAST, type.getDescriptor());
         } else if (sort == Type.OBJECT) {
+            if (type.getInternalName().equals("java/lang/Object")) return;
             visitor.visitTypeInsn(Opcodes.CHECKCAST, type.getInternalName());
         } else if (sort == Type.BOOLEAN) {
             visitor.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Boolean");
@@ -259,6 +260,7 @@ public class MagicAccessorGenerator {
         int size = 1;
         if (!isCtr) {
             visitor.visitVarInsn(Opcodes.ALOAD, 1);
+            unwrap(visitor, args[0]);
         }
 
         for (int i = (isCtr ? 0 : 1), ed = args.length; i < ed; i++) {
