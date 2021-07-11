@@ -208,9 +208,6 @@ public class MagicAccessorGenerator {
         visitor.visitTryCatchBlock(tryStart, tryEnd, handlerStart, "java/lang/Throwable");
 
         Type[] args = Type.getArgumentTypes(info.methodDesc);
-        if (isCtr) {
-            System.out.println(info.methodDesc);
-        }
         if (!isCtr) { // this null check
             visitor.visitVarInsn(Opcodes.ALOAD, 1);
             Label end = new Label();
