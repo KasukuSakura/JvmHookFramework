@@ -14,9 +14,9 @@ import java.util.List;
 
 public class BuiltInProcessors {
     private static void preinit() throws Exception {
-        PCChain.processors.add(new RedirectedClassNodeProcessor(RedirectGenerator.redirectInfos));
-
         PCChain.processors.add(new ExtendsForbidden());
+
+        PCChain.processors.add(new RedirectedClassNodeProcessor(RedirectGenerator.redirectInfos));
 
         RedirectGenerator.generate(ReflectHook.class);
     }

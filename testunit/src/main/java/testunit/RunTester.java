@@ -1,20 +1,33 @@
 package testunit;
 
 import org.junit.jupiter.api.Assertions;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.opentest4j.AssertionFailedError;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public class RunTester {
     public static void error() {
         throw new AssertionError();
     }
 
+    public static void pubObjCtr(ClassVisitor cv) {
+        MethodVisitor init = cv.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+        init.visitVarInsn(Opcodes.ALOAD, 0);
+        init.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+        init.visitInsn(Opcodes.RETURN);
+        init.visitMaxs(3, 1);
+    }
+
     public static void main(String[] args) throws Throwable {
+        AtomicInteger counter = new AtomicInteger();
         error();
 
         Class.forName(RunTester.class.getName());
@@ -58,6 +71,23 @@ public class RunTester {
             throw new AssertionFailedError("Inject class loaded.");
         } catch (LinkageError throwable) {
             throwable.printStackTrace(System.out);
+        }
+        try {
+            ClassWriter cw = new ClassWriter(0);
+            cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, "testunit/TSVC_" + counter.getAndIncrement(), null, "java/lang/Object", new String[]{"java/util/function/Consumer"});
+            pubObjCtr(cw);
+            MethodVisitor accept = cw.visitMethod(Opcodes.ACC_PUBLIC, "accept", "(Ljava/lang/Object;)V", null, null);
+            accept.visitVarInsn(Opcodes.ALOAD, 1);
+            accept.visitTypeInsn(Opcodes.CHECKCAST, "[Ljava/lang/reflect/AccessibleObject;");
+            accept.visitInsn(Opcodes.ICONST_1);
+            accept.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/reflect/Method", "setAccessible", "([Ljava/lang/reflect/AccessibleObject;Z)V", false);
+            accept.visitInsn(Opcodes.RETURN);
+            accept.visitMaxs(5, 5);
+            Consumer consumer = (Consumer) new Svc().def(cw.toByteArray()).getConstructor().newInstance();
+            consumer.accept(new AccessibleObject[]{forName.getDeclaredField("i")});
+        } catch (RuntimeException e) {
+            e.printStackTrace(System.out);
+            Assertions.assertTrue(e.getMessage().contains("PERMISSION DENIED"));
         }
         RunTester.class.getDeclaredMethod("normalReflection").invoke(null);
     }

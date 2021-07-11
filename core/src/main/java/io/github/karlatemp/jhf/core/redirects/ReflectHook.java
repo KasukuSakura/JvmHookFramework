@@ -104,6 +104,18 @@ public class ReflectHook {
 
     @RedirectInfos(@RedirectInfos.Info(
             value = AccessibleObject.class,
+            methods = @RedirectInfos.MethodInfo(invokeType = invokeStatic, name = "setAccessible", methodDesc = "([Ljava/lang/reflect/AccessibleObject;Z)V")
+    ))
+    public static void hookSetAccessible1(MethodInvokeStack stack) throws Throwable {
+        for (AccessibleObject object : (AccessibleObject[]) stack.getAsObject(0)) {
+            if (object instanceof Member) {
+                checkMemberAccess(stack, (Member) object, newJLRInaccessibleObjectException);
+            }
+        }
+    }
+
+    @RedirectInfos(@RedirectInfos.Info(
+            value = AccessibleObject.class,
             methods = @RedirectInfos.MethodInfo(name = "trySetAccessible", methodDesc = "()Z", invokeType = invokeVirtual)
     ))
     public static void hookTrySetAccessible(MethodInvokeStack stack) throws Throwable {

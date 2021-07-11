@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.Stream;
 
 import static io.github.karlatemp.jhf.api.markers.MarkerMirrorInitialize.PubMagicAccessorImplJdkName;
@@ -33,7 +32,7 @@ public class RedirectGenerator {
             MTDESC = "(Ljava/lang/Object;)V",
             RMTDESC = "(" + MIST + ")V";
 
-    public static final Collection<io.github.karlatemp.jhf.core.utils.RedirectInfos.RedirectInfo> redirectInfos = new ConcurrentLinkedDeque<>();
+    public static final Collection<io.github.karlatemp.jhf.core.utils.RedirectInfos.RedirectInfo> redirectInfos = io.github.karlatemp.jhf.core.utils.RedirectInfos.redirectInfos;
 
     private static final String callerSensitive, reflection;
 
@@ -54,7 +53,7 @@ public class RedirectGenerator {
         }
     }
 
-    public static void generate(Class<?> mirror) {
+    public static void generate(Class<?> mirror) throws Exception {
 
         Iterator<Method> iterator = Stream.of(mirror.getDeclaredMethods())
                 .filter(it -> Modifier.isStatic(it.getModifiers()))
@@ -101,8 +100,12 @@ public class RedirectGenerator {
                         Class<?> target = info.value();
                         if (target == void.class) {
                             redirectInfo.sourceOwner = info.target();
+                            redirectInfo.isSourceFinal = Modifier.isFinal(Class.forName(
+                                    redirectInfo.sourceOwner.replace('/', '.')
+                            ).getModifiers());
                         } else {
                             redirectInfo.sourceOwner = target.getName().replace('.', '/');
+                            redirectInfo.isSourceFinal = Modifier.isFinal(target.getModifiers());
                         }
                     }
                     redirectInfo.sourceMethodName = methodInfo.name();

@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import static io.github.karlatemp.jhf.api.utils.RandomNameGenerator.GENERATOR;
+import static io.github.karlatemp.jhf.api.utils.RandomNameGenerator.INSTANCE;
 
 @SuppressWarnings("ConstantConditions")
 public class MethodInvokeStackJLAMirror {
@@ -64,6 +65,8 @@ public class MethodInvokeStackJLAMirror {
 
     public static final String
 
+            MH_DYN_C_NAME,
+            MH_DYN_C_DESC = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/CallSite;",
             REMAP_METHOD_M_NAME,
             PREMAP_METHOD_M_NANE,
             REMAP_METHOD_M_DESC = "(Ljava/lang/Object;)Ljava/lang/Object;";
@@ -170,6 +173,30 @@ public class MethodInvokeStackJLAMirror {
                     remap.visitMethodInsn(Opcodes.INVOKESTATIC, "io/github/karlatemp/jhf/core/redirect/ReflectionFactoryBridge", "remap", REMAP_METHOD_M_DESC, false);
                     remap.visitInsn(Opcodes.ARETURN);
                     remap.visitMaxs(3, 2);
+                }
+                { // RedirectInfos.redirect
+                    MH_DYN_C_NAME = "RIRD" + INSTANCE.getNextName(null);
+                    String MH_DYN_C_ABS = MH_DYN_C_NAME + "$$abs";
+
+                    jlaft.visitMethod(Opcodes.ACC_PROTECTED | Opcodes.ACC_ABSTRACT, MH_DYN_C_ABS, MH_DYN_C_DESC, null, null);
+                    MethodVisitor redirect = jlaft.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, MH_DYN_C_NAME, MH_DYN_C_DESC, null, null);
+                    redirect.visitFieldInsn(Opcodes.GETSTATIC, MIRROR_ALOC_NAME, "i", MANT);
+                    redirect.visitVarInsn(Opcodes.ALOAD, 0);
+                    redirect.visitVarInsn(Opcodes.ALOAD, 1);
+                    redirect.visitVarInsn(Opcodes.ALOAD, 2);
+                    redirect.visitVarInsn(Opcodes.ALOAD, 3);
+                    redirect.visitMethodInsn(Opcodes.INVOKEVIRTUAL, MIRROR_ALOC_NAME, MH_DYN_C_ABS, MH_DYN_C_DESC, false);
+                    redirect.visitInsn(Opcodes.ARETURN);
+                    redirect.visitMaxs(5, 5);
+
+                    redirect = spi.visitMethod(Opcodes.ACC_PROTECTED, MH_DYN_C_ABS, MH_DYN_C_DESC, null, null);
+                    redirect.visitVarInsn(Opcodes.ALOAD, 1);
+                    redirect.visitVarInsn(Opcodes.ALOAD, 2);
+                    redirect.visitVarInsn(Opcodes.ALOAD, 3);
+                    redirect.visitVarInsn(Opcodes.ALOAD, 4);
+                    redirect.visitMethodInsn(Opcodes.INVOKESTATIC, "io/github/karlatemp/jhf/core/utils/RedirectInfos", "redirect", MH_DYN_C_DESC, false);
+                    redirect.visitInsn(Opcodes.ARETURN);
+                    redirect.visitMaxs(5, 5);
                 }
 
                 MethodVisitor alloc = jlaft.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "alloc", MIRROR_ALLOC_DESC = ("(J[JIILjava/lang/Class;)L" + JLA_MIRROR_CLASS_NAME + ";"), null, null);
