@@ -110,7 +110,8 @@ public class RedirectGenerator {
                     }
                     redirectInfo.sourceMethodName = methodInfo.name();
                     redirectInfo.sourceMethodDesc = methodInfo.methodDesc();
-                    redirectInfo.isStatic = methodInfo.invokeType() == InvokeType.invokeStatic;
+                    InvokeType invokeType = methodInfo.invokeType();
+                    redirectInfo.isStatic = invokeType == InvokeType.invokeStatic;
                     if (redirectInfo.sourceMethodDesc.isEmpty()) {
                         redirectInfo.sourceMethodDesc = Type.getMethodDescriptor(
                                 Type.getType(methodInfo.methodReturnType()),
@@ -120,7 +121,10 @@ public class RedirectGenerator {
                         );
                     }
                     current.add(redirectInfo);
-                    Type retType = Type.getReturnType(redirectInfo.sourceMethodDesc);
+                    Type retType = invokeType == InvokeType.allocate
+                            ? Type.getObjectType(redirectInfo.sourceOwner)
+                            : Type.getReturnType(redirectInfo.sourceMethodDesc);
+
                     Type[] argType;
                     String mirrorDesc;
                     {
@@ -128,6 +132,9 @@ public class RedirectGenerator {
                         if (redirectInfo.isStatic) {
                             argType = tmp;
                             mirrorDesc = redirectInfo.sourceMethodDesc;
+                        } else if (invokeType == InvokeType.allocate) {
+                            argType = tmp;
+                            mirrorDesc = Type.getMethodDescriptor(retType, argType);
                         } else {
                             argType = new Type[tmp.length + 1];
                             System.arraycopy(tmp, 0, argType, 1, tmp.length);
@@ -266,6 +273,11 @@ public class RedirectGenerator {
                                     "reset", "()V", true
                             );
 
+                            if (invokeType == InvokeType.allocate) {
+                                m_mirror.visitTypeInsn(Opcodes.NEW, redirectInfo.sourceOwner);
+                                m_mirror.visitInsn(Opcodes.DUP);
+                            }
+
                             for (Type argt : argType) {
                                 m_mirror.visitVarInsn(Opcodes.ALOAD, slot);
                                 m_mirror.visitMethodInsn(
@@ -283,7 +295,7 @@ public class RedirectGenerator {
                             }
 
                             m_mirror.visitMethodInsn(
-                                    redirectInfo.isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKEVIRTUAL,
+                                    invokeType == InvokeType.allocate ? Opcodes.INVOKESPECIAL : (redirectInfo.isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKEVIRTUAL),
                                     redirectInfo.sourceOwner,
                                     redirectInfo.sourceMethodName,
                                     redirectInfo.sourceMethodDesc,
@@ -380,8 +392,11 @@ public class RedirectGenerator {
                 mt = MethodType.fromMethodDescriptorString(desc, null);
             }
             String name = methodInfo.name();
-            if (methodInfo.invokeType() == InvokeType.invokeStatic) {
+            InvokeType invokeType = methodInfo.invokeType();
+            if (invokeType == InvokeType.invokeStatic) {
                 ROOT.findStatic(c, name, mt);
+            } else if (invokeType == InvokeType.allocate) {
+                ROOT.findConstructor(c, mt);
             } else {
                 ROOT.findVirtual(c, name, mt);
             }

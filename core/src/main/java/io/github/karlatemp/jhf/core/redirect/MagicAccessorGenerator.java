@@ -7,6 +7,7 @@ import io.github.karlatemp.jhf.api.utils.MapMirroredSet;
 import io.github.karlatemp.jhf.api.utils.NameGenerator;
 import io.github.karlatemp.jhf.api.utils.NonRepeatingNameGenerator;
 import io.github.karlatemp.jhf.api.utils.RandomNameGenerator;
+import io.github.karlatemp.jhf.core.utils.DmpC;
 import io.github.karlatemp.jhf.core.utils.RedirectInfos;
 import io.github.karlatemp.jhf.core.utils.UAAccessHolder;
 import org.objectweb.asm.Type;
@@ -76,7 +77,7 @@ public class MagicAccessorGenerator {
             RandomNameGenerator.INSTANCE,
             5
     );
-    public static String pkgPrefix = "jdk/internal/reflect/RR_MA_X_WWW_XZA_$$$Z$";
+    public static String pkgPrefix = "jdk/internal/reflect/RR_ACC$Z$";
 
     private static void registerRemap(RedirectInfos.RedirectInfo info) throws Throwable {
         Class<?> src = Class.forName(info.owner.replace('/', '.')),
@@ -183,14 +184,18 @@ public class MagicAccessorGenerator {
             return;
         }
         ClassWriter writer = new ClassWriter(0);
-        String name = pkgPrefix + GEN.getNextName(null);
-        writer.visit(Opcodes.V1_8, 0, name, null, METHOD_ACCESSOR_IMPL, null);
+        boolean isCtr = info.sourceMethodName.equals("<init>");
+        String name = pkgPrefix + (isCtr ? "ConstructorAccessor$$" : "MethodAccessor$$") + GEN.getNextName(null);
+        writer.visit(Opcodes.V1_8, 0, name, null,
+                isCtr ? CONSTRUCTOR_ACCESSOR_IMPL : METHOD_ACCESSOR_IMPL,
+                null
+        );
 
 
         MethodVisitor visitor = writer.visitMethod(
                 Opcodes.ACC_PUBLIC,
-                "invoke",
-                "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
+                isCtr ? "newInstance" : "invoke",
+                isCtr ? "([Ljava/lang/Object;)Ljava/lang/Object;" : "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
                 null,
                 null
         );
@@ -202,7 +207,10 @@ public class MagicAccessorGenerator {
         visitor.visitTryCatchBlock(tryStart, tryEnd, handlerStart, "java/lang/Throwable");
 
         Type[] args = Type.getArgumentTypes(info.methodDesc);
-        { // this null check
+        if (isCtr) {
+            System.out.println(info.methodDesc);
+        }
+        if (!isCtr) { // this null check
             visitor.visitVarInsn(Opcodes.ALOAD, 1);
             Label end = new Label();
             visitor.visitJumpInsn(Opcodes.IFNONNULL, end);
@@ -214,8 +222,9 @@ public class MagicAccessorGenerator {
             visitor.visitInsn(Opcodes.ATHROW);
             visitor.visitLabel(end);
         }
-        if (args.length != 1) { // check argument size
-            visitor.visitVarInsn(Opcodes.ALOAD, 2);
+        if (args.length != (isCtr ? 0 : 1)) { // check argument size
+            int argumentsSlot = isCtr ? 1 : 2;
+            visitor.visitVarInsn(Opcodes.ALOAD, argumentsSlot);
             Label end = new Label();
             visitor.visitJumpInsn(Opcodes.IFNONNULL, end);
 
@@ -228,9 +237,13 @@ public class MagicAccessorGenerator {
             visitor.visitLabel(end);
 
 
-            visitor.visitVarInsn(Opcodes.ALOAD, 2);
+            visitor.visitVarInsn(Opcodes.ALOAD, argumentsSlot);
             visitor.visitInsn(Opcodes.ARRAYLENGTH);
-            visitor.visitLdcInsn(args.length - 1);
+            if (isCtr) {
+                visitor.visitLdcInsn(args.length);
+            } else {
+                visitor.visitLdcInsn(args.length - 1);
+            }
             Label ok = new Label();
             visitor.visitJumpInsn(Opcodes.IF_ICMPEQ, ok);
 
@@ -242,12 +255,19 @@ public class MagicAccessorGenerator {
 
             visitor.visitLabel(ok);
         }
-        int size = 1;
-        visitor.visitVarInsn(Opcodes.ALOAD, 1);
 
-        for (int i = 1, ed = args.length; i < ed; i++) {
-            visitor.visitVarInsn(Opcodes.ALOAD, 2);
-            visitor.visitLdcInsn(i - 1);
+        int size = 1;
+        if (!isCtr) {
+            visitor.visitVarInsn(Opcodes.ALOAD, 1);
+        }
+
+        for (int i = (isCtr ? 0 : 1), ed = args.length; i < ed; i++) {
+            visitor.visitVarInsn(Opcodes.ALOAD, isCtr ? 1 : 2);
+            if (isCtr) {
+                visitor.visitLdcInsn(i);
+            } else {
+                visitor.visitLdcInsn(i - 1);
+            }
             visitor.visitInsn(Opcodes.AALOAD);
             size += args[i].getSize();
             unwrap(visitor, args[i]);
@@ -279,12 +299,17 @@ public class MagicAccessorGenerator {
 
         byte[] code = writer.toByteArray();
         // DmpC.dump(code);
-        Class<?> accessorC = UAAccessHolder.UNSAFE.defineClass(null, code, 0, code.length, CC, null);
+        Class<?> accessorC = DmpC.define(CC, code);
+//        Class<?> accessorC = UAAccessHolder.UNSAFE.defineClass(null, code, 0, code.length, CC, null);
         Object accessorI = UAAccessHolder.UNSAFE.allocateInstance(accessorC);
 
         mg_handlers.add((event, desc) -> {
             Member requested = event.requested;
-            if (!(requested instanceof Method)) return;
+            if (isCtr) {
+                if (!(requested instanceof Constructor<?>)) return;
+            } else {
+                if (!(requested instanceof Method)) return;
+            }
             if (requested.getDeclaringClass() != src) return;
             if (Modifier.isStatic(requested.getModifiers())) return;
             if (!desc.equals(info.sourceMethodDesc)) return;

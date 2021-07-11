@@ -7,6 +7,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.opentest4j.AssertionFailedError;
 
+import java.io.FileInputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
@@ -90,6 +91,10 @@ public class RunTester {
             Assertions.assertTrue(e.getMessage().contains("PERMISSION DENIED"));
         }
         RunTester.class.getDeclaredMethod("normalReflection").invoke(null);
+        new FileInputStream(".jvm-hook-framework/config.conf").close();
+        FileInputStream.class.getConstructor(String.class)
+                .newInstance(".jvm-hook-framework/config.conf")
+                .close();
     }
 
     private static void normalReflection() {

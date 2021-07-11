@@ -1,14 +1,17 @@
 package io.github.karlatemp.jhf.core.utils;
 
+import io.github.karlatemp.jhf.api.utils.SneakyThrow;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.analysis.*;
 
 import java.lang.invoke.*;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -128,6 +131,140 @@ public class RedirectInfos {
                 }
             }
         }
+
+        // <init> analyze
+        {
+            class BasicValue_NEW extends BasicValue {
+                final TypeInsnNode node;
+
+                BasicValue_NEW(Type type, TypeInsnNode node) {
+                    super(type);
+                    this.node = node;
+                }
+            }
+            class BasicValue_NEW_DUP extends BasicValue {
+                final TypeInsnNode node;
+                final InsnNode dup;
+
+                BasicValue_NEW_DUP(Type type, TypeInsnNode node, InsnNode dup) {
+                    super(type);
+                    this.node = node;
+                    this.dup = dup;
+                }
+            }
+            class NewObjectOperator {
+                final BasicValue_NEW_DUP allocate;
+                final MethodInsnNode init;
+
+                NewObjectOperator(BasicValue_NEW_DUP allocate, MethodInsnNode init) {
+                    this.allocate = allocate;
+                    this.init = init;
+                }
+            }
+
+            List<NewObjectOperator> initCalls = new ArrayList<>();
+
+            class JHFBasicBasicInterpreter extends BasicInterpreter {
+                JHFBasicBasicInterpreter() {
+                    super(ASM9);
+                }
+
+                @Override
+                public BasicValue newOperation(AbstractInsnNode insn) throws AnalyzerException {
+                    if (insn.getOpcode() == Opcodes.NEW) {
+                        TypeInsnNode tin = (TypeInsnNode) insn;
+                        return new BasicValue_NEW(Type.getObjectType(tin.desc), tin);
+                    }
+                    return super.newOperation(insn);
+                }
+
+                @Override
+                public BasicValue copyOperation(AbstractInsnNode insn, BasicValue value) throws AnalyzerException {
+                    if (insn.getOpcode() == Opcodes.DUP) {
+                        InsnNode insnNode = (InsnNode) insn;
+                        if (value instanceof BasicValue_NEW) {
+                            BasicValue_NEW bv = (BasicValue_NEW) value;
+                            return new BasicValue_NEW_DUP(
+                                    bv.getType(), bv.node, insnNode
+                            );
+                        }
+                        if (value instanceof BasicValue_NEW_DUP) {
+                            throw new AnalyzerException(insn, "Bad bytecode: Multiple DUP after NEW");
+                        }
+                    }
+                    return super.copyOperation(insn, value);
+                }
+            }
+            class JHFFrame extends Frame<BasicValue> {
+                public JHFFrame(int numLocals, int maxStack) {
+                    super(numLocals, maxStack);
+                }
+
+                public JHFFrame(Frame<? extends BasicValue> frame) {
+                    super(frame);
+                }
+
+                @Override
+                public void execute(AbstractInsnNode insn, Interpreter<BasicValue> interpreter) throws AnalyzerException {
+                    top:
+                    if (insn.getOpcode() == Opcodes.INVOKESPECIAL) {
+                        MethodInsnNode methodInsnNode = (MethodInsnNode) insn;
+                        if (!methodInsnNode.name.equals("<init>")) break top;
+
+                        BasicValue stack = getStack(getStackSize() - Type.getArgumentTypes(((MethodInsnNode) insn).desc).length - 1);
+                        if (stack instanceof BasicValue_NEW) {
+                            throw new AnalyzerException(((BasicValue_NEW) stack).node, "No DUP after NEW");
+                        }
+                        if (stack instanceof BasicValue_NEW_DUP) {
+                            BasicValue_NEW_DUP invoke = (BasicValue_NEW_DUP) stack;
+                            if (!invoke.node.desc.equals(methodInsnNode.owner)) {
+                                throw new AnalyzerException(insn, "Constructor not match. Allocated " + invoke.node.desc + " but called " + methodInsnNode.owner + methodInsnNode.name + methodInsnNode.desc);
+                            }
+                            initCalls.add(new NewObjectOperator(invoke, methodInsnNode));
+                        }
+                    }
+                    super.execute(insn, interpreter);
+                }
+            }
+            class JHFAnalyze extends Analyzer<BasicValue> {
+                JHFAnalyze() {
+                    super(new JHFBasicBasicInterpreter());
+                }
+
+                @Override
+                protected Frame<BasicValue> newFrame(int numLocals, int numStack) {
+                    return new JHFFrame(numLocals, numStack);
+                }
+
+                @Override
+                protected Frame<BasicValue> newFrame(Frame<? extends BasicValue> frame) {
+                    return new JHFFrame(frame);
+                }
+            }
+
+            try {
+                new JHFAnalyze().analyze(classNode.name, methodNode);
+            } catch (AnalyzerException e) {
+                SneakyThrow.throw0(e);
+            }
+            for (NewObjectOperator calls : initCalls) {
+                RedirectInfo redirectInfo = findRedirectInfo(redirectInfos, calls.allocate.node.desc, "<init>", calls.init.desc, false);
+                if (redirectInfo != null) {
+                    removeSafely(methodNode.instructions, calls.allocate.node);
+                    removeSafely(methodNode.instructions, calls.allocate.dup);
+                    methodNode.instructions.insertBefore(
+                            new MethodInsnNode(Opcodes.INVOKESTATIC, redirectInfo.owner, redirectInfo.methodName, redirectInfo.methodDesc, false),
+                            calls.init
+                    );
+                    methodNode.instructions.remove(calls.init);
+                }
+            }
+        }
+    }
+
+    private static void removeSafely(InsnList insnList, AbstractInsnNode node) {
+        if (node.getNext() == null && node.getPrevious() == null) return;
+        insnList.remove(node);
     }
 
     public static Handle applyRedirect(
