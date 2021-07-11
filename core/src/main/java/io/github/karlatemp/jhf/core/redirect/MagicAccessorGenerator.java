@@ -7,6 +7,7 @@ import io.github.karlatemp.jhf.api.utils.MapMirroredSet;
 import io.github.karlatemp.jhf.api.utils.NameGenerator;
 import io.github.karlatemp.jhf.api.utils.NonRepeatingNameGenerator;
 import io.github.karlatemp.jhf.api.utils.RandomNameGenerator;
+import io.github.karlatemp.jhf.core.utils.ASMUtils;
 import io.github.karlatemp.jhf.core.utils.DmpC;
 import io.github.karlatemp.jhf.core.utils.RedirectInfos;
 import io.github.karlatemp.jhf.core.utils.UAAccessHolder;
@@ -237,11 +238,7 @@ public class MagicAccessorGenerator {
 
             visitor.visitVarInsn(Opcodes.ALOAD, argumentsSlot);
             visitor.visitInsn(Opcodes.ARRAYLENGTH);
-            if (isCtr) {
-                visitor.visitLdcInsn(args.length);
-            } else {
-                visitor.visitLdcInsn(args.length - 1);
-            }
+            ASMUtils.emit(visitor, args.length - (isCtr ? 0 : 1));
             Label ok = new Label();
             visitor.visitJumpInsn(Opcodes.IF_ICMPEQ, ok);
 
@@ -262,11 +259,7 @@ public class MagicAccessorGenerator {
 
         for (int i = (isCtr ? 0 : 1), ed = args.length; i < ed; i++) {
             visitor.visitVarInsn(Opcodes.ALOAD, isCtr ? 1 : 2);
-            if (isCtr) {
-                visitor.visitLdcInsn(i);
-            } else {
-                visitor.visitLdcInsn(i - 1);
-            }
+            ASMUtils.emit(visitor, i - (isCtr ? 0 : 1));
             visitor.visitInsn(Opcodes.AALOAD);
             size += args[i].getSize();
             unwrap(visitor, args[i]);

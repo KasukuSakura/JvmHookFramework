@@ -2,10 +2,7 @@ package io.github.karlatemp.jhf.core.redirect;
 
 import io.github.karlatemp.jhf.api.utils.*;
 import io.github.karlatemp.jhf.core.builtin.ExtendsForbidden;
-import io.github.karlatemp.jhf.core.utils.DmpC;
-import io.github.karlatemp.jhf.core.utils.MethodInvokeStackImpl;
-import io.github.karlatemp.jhf.core.utils.MethodInvokeStackJLAMirror;
-import io.github.karlatemp.jhf.core.utils.UAAccessHolder;
+import io.github.karlatemp.jhf.core.utils.*;
 import io.github.karlatemp.mxlib.MxLib;
 import io.github.karlatemp.unsafeaccessor.Unsafe;
 import org.objectweb.asm.*;
@@ -170,15 +167,15 @@ public class RedirectGenerator {
                         frontEndWriter.visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE, addrName, "[J", null, null);
                         {
                             long[] addr = address[0];
-                            frontendClInit.visitLdcInsn(addr.length);
+                            ASMUtils.emit(frontendClInit, addr.length);
                             frontendClInit.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG);
                             frontendClInit.visitInsn(Opcodes.DUP);
                             frontendClInit.visitFieldInsn(Opcodes.PUTSTATIC, frontEndName, addrName, "[J");
 
                             for (int i = 0, ed = addr.length; i < ed; i++) {
                                 frontendClInit.visitInsn(Opcodes.DUP);
-                                frontendClInit.visitLdcInsn(i);
-                                frontendClInit.visitLdcInsn(addr[i]);
+                                ASMUtils.emit(frontendClInit, i);
+                                ASMUtils.emit(frontendClInit, addr[i]);
                                 frontendClInit.visitInsn(Opcodes.LASTORE);
                             }
                             frontendClInit.visitInsn(Opcodes.POP);
@@ -186,10 +183,10 @@ public class RedirectGenerator {
 
                         m_mirror.visitFieldInsn(Opcodes.GETSTATIC, frontEndName, "i", frontTypeName);
 
-                        m_mirror.visitLdcInsn(ramSize[0]);
+                        ASMUtils.emit(m_mirror, ramSize[0]);
                         m_mirror.visitFieldInsn(Opcodes.GETSTATIC, frontEndName, addrName, "[J");
-                        m_mirror.visitLdcInsn(argType.length);
-                        m_mirror.visitLdcInsn((int) ramSize[1]);
+                        ASMUtils.emit(m_mirror, argType.length);
+                        ASMUtils.emit(m_mirror, (int) ramSize[1]);
                         m_mirror.visitMethodInsn(Opcodes.INVOKESTATIC, reflection, "getCallerClass", "()Ljava/lang/Class;", false);
                         m_mirror.visitMethodInsn(Opcodes.INVOKESTATIC, MethodInvokeStackJLAMirror.MIRROR_ALOC_NAME, "alloc", MethodInvokeStackJLAMirror.MIRROR_ALLOC_DESC, false);
 
