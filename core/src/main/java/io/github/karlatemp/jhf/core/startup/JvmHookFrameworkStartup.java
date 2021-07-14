@@ -116,16 +116,6 @@ public class JvmHookFrameworkStartup {
         );
 
         run();
-        PluginClassLoader.loadAndBootstrap(
-                new File(JHFConfig.workingDir, "plugins"),
-                it -> {
-                    VMTransfer.PLCL = it;
-                    Field ccl = JHFClassProvider.class.getDeclaredField("CCL");
-                    ccl.setAccessible(true);
-                    ccl.set(null, VMTransfer.PLCL);
-                    return null;
-                }
-        );
         {
             Field field = JvmHookFramework.class.getDeclaredField("INSTANCE");
             Root.openAccess(field);
@@ -145,6 +135,17 @@ public class JvmHookFrameworkStartup {
 
         BuiltInProcessors.setup();
         JvmHookFrameworkStartup.instrumentation = instrumentation;
+
+        PluginClassLoader.loadAndBootstrap(
+                new File(JHFConfig.workingDir, "plugins"),
+                it -> {
+                    VMTransfer.PLCL = it;
+                    Field ccl = JHFClassProvider.class.getDeclaredField("CCL");
+                    ccl.setAccessible(true);
+                    ccl.set(null, VMTransfer.PLCL);
+                    return null;
+                }
+        );
 
         if (instrumentation != null) {
             StackReMapInfo.refineReflectionFactory(instrumentation);
